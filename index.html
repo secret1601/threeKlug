@@ -109,7 +109,7 @@
         // 모델 비동기 로드, 텍스처 환경 세팅, 모델 애니메이션 세팅 
         async function loadModel() {
             const rgbeLoader = new RGBELoader();
-            const gltfLoader = new GLTFLoader().setPath('/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
         
             const [texture, gltf] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/hdr-2?v=1722389067'),
