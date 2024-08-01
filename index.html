@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>GLTF Loader</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { overflow: hidden; margin: 0; padding: 0; }
+        .container { position: relative; display: block; }
+        canvas { position: relative; }
+        .buttons { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: block; z-index: 1;}
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+            "three": "https://unpkg.com/three/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="buttons">
+            <button id="front">Front</button>
+            <button id="back">Back</button>
+            <button id="left">Left</button>
+            <button id="right">Right</button>
+            <button id="top">Top</button>
+            <button id="bottom">Bottom</button>
+            <button id="animation1">Animation 1</button>
+            <button id="animation2">Animation 2</button>
+            <button id="animation3">Animation 3</button>
+        </div>
+        <canvas id="MyCanvas"></canvas>
+    </div>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    
+        const frontButton = document.querySelector('#front');
+        const backButton = document.querySelector('#back');
+        const leftButton = document.querySelector('#left');
+        const rightButton = document.querySelector('#right');
+        const topButton = document.querySelector('#top');
+        const bottomButton = document.querySelector('#bottom');
+        const animation1 = document.querySelector('#animation1');
+        const animation2 = document.querySelector('#animation2');
+        const animation3 = document.querySelector('#animation3');
+        
+        let renderer, scene, camera, controls, objectCenter, mixer;
+        let targetPosition = new THREE.Vector3();
+        let isAnimating = false;
+        let animationInProgress = false;
+        let actions = [];
+        let animationStates = []; // Track animation states (playing or paused)
+        
+        init().catch(err => console.error(err));
+        
+        async function init() {
+            setupRenderer();
+            setupScene();
+            setupCamera();
+            setupControls();
+            await loadModel();
+        
+            window.addEventListener('resize', onWindowResize);
+            setupButtons();
+        }
+        
+        // 렌더러 설정
+        function setupRenderer() {
+            renderer = new THREE.WebGLRenderer({ canvas: MyCanvas, antialias: true });
+            renderer.setAnimationLoop(render);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            // 매핑 노출 수준 설정
+            renderer.toneMappingExposure = 0.9;
+        }
+        
+        // 3D scene 설정
+        function setupScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000);
+        }
+        
+        function setupCamera() {
+            camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
+            camera.position.set(1, 2, -3);
+            camera.lookAt(0, 1, 0);
+        }
+        
+        function setupControls() {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 2;
+            controls.maxDistance = 10;
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false;
+            controls.target.set(0, 0.2, 0);
+            controls.update();
+        }
+        
+        // 모델 비동기 로드, 텍스처 환경 세팅, 모델 애니메이션 세팅 
+        async function loadModel() {
+            const rgbeLoader = new RGBELoader();
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
+        
+            const [texture, gltf] = await Promise.all([
+                rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/hdr-2?v=1722389067'),
+                gltfLoader.loadAsync('klug_disposer_v8(animation_edit).glb'),
+            ]);
+        
+            console.log("gltf -> ", gltf);
+            texture.mapping = THREE.EquirectangularReflectionMapping; // 다른 효과 체크
+            scene.environment = texture;
+            scene.add(gltf.scene);
+        
+            objectCenter = new THREE.Vector3();
+            const box = new THREE.Box3().setFromObject(gltf.scene);
+            box.getCenter(objectCenter);
+        
+            controls.target.copy(objectCenter);
+        
+            mixer = new THREE.AnimationMixer(gltf.scene);
+            gltf.animations.forEach((clip, index) => {
+                const action = mixer.clipAction(clip);
+                actions.push(action);
+                animationStates[index] = { isPlaying: false, time: 0 }; // Initialize animation states
+            });
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            render();
+        }
+        
+        function render() {
+            controls.update();
+            if (mixer) mixer.update(0.01);
+            renderer.render(scene, camera);
+        }
+        
+        function setupButtons() {
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 3));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 3));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 3, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 3, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 3, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 3, 0));
+        
+            animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
+            animation2.addEventListener('click', () => toggleAnimation([3]));
+            animation3.addEventListener('click', () => toggleAnimation([4]));
+        }
+        
+        function setCameraTarget(x, y, z) {
+            targetPosition.set(x, y, z);
+            if (!isAnimating) {
+                isAnimating = true;
+                requestAnimationFrame(animateCamera);
+            }
+        }
+        
+        function animateCamera() {
+            const speed = 0.035;
+            const distance = camera.position.distanceTo(targetPosition);
+        
+            if (distance > 0.3) {
+                camera.position.lerp(targetPosition, speed);
+                camera.lookAt(objectCenter);
+                controls.update();
+                controls.enabled = false;
+                requestAnimationFrame(animateCamera);
+            } else {
+                controls.enabled = true;
+                isAnimating = false;
+            }
+        }
+
+        function toggleAnimation(indices) {
+            indices.forEach(index => {
+                if (!mixer || !actions[index]) return;
+
+                const action = actions[index];
+                const state = animationStates[index];
+
+                if (!state.isPlaying) {
+                    startAnimation(action, state);
+                } else {
+                    togglePlaybackDirection(action);
+                }
+
+                ensureLoopOnce(action);
+                monitorAnimation(action, state);
+
+                mixer.addEventListener('finished', (e) => {
+                    if (e.action === action) {
+                        console.log("Animation finished");
+                        state.isPlaying = false;
+                    }
+                });
+            });
+        }
+
+        function startAnimation(action, state) {
+            action.reset();
+            action.play();
+            action.paused = false;
+            action.timeScale = 2; // Forward playback direction
+            state.isPlaying = true;
+            state.time = action.time;
+        }
+
+        function togglePlaybackDirection(action) {
+            action.paused = false;
+            action.timeScale = action.timeScale === 2 ? -2 : 2;
+        }
+
+        function ensureLoopOnce(action) {
+            action.setLoop(THREE.LoopOnce);
+        }
+
+        function monitorAnimation(action, state) {
+            const pauseThreshold = 0.1; 
+
+            function checkTime() {
+                if (!state.isPlaying) return;
+                const remainingTime = action.getClip().duration - action.time;
+                if (remainingTime <= pauseThreshold) {
+                    action.paused = true;
+                    state.isPlaying = true;
+                    console.log("pause Animation");
+                } else {
+                    requestAnimationFrame(checkTime);
+                }
+            }
+
+            requestAnimationFrame(checkTime);
+        }
+    </script>
+    
+    
+</body>
+
+</html>
+
