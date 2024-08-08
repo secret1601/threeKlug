@@ -1,0 +1,13 @@
+// 1. Json 형식
+{
+    "user1@example.com": "COUPON123",
+    "user2@example.com": "COUPON456",
+    "user3@example.com": "COUPON789"
+}
+
+// 2. 배열 형식
+[
+    { "email": "user1@example.com", "coupon": "COUPON123" },
+    { "email": "user2@example.com", "coupon": "COUPON456" },
+    { "email": "user3@example.com", "coupon": "COUPON789" }
+]

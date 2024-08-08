@@ -55,7 +55,7 @@
         let renderer, scene, camera, controls, objectCenter, mixer;
         let targetPosition = new THREE.Vector3();
         let isAnimating = false;
-        let isAnimationRunning = false;
+        let animationInProgress = false;
         let actions = [];
         let animationStates = []; // Track animation states (playing or paused)
         
@@ -80,26 +80,27 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             // 매핑 노출 수준 설정
-            renderer.toneMappingExposure = 0.9;
+            renderer.toneMappingExposure = 1;
+
+            renderer.outputEncoding = THREE.sRGBEncoding;
         }
         
         // 3D scene 설정
         function setupScene() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x000);
-            // scene.fog = new THREE.Fog(0x000, 0, 510);
+            scene.background = new THREE.Color(0x000000);
         }
-        
         
         function setupCamera() {
             camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
-            camera.position.set(1, 2, -3);
+            camera.position.set(2, 2, 2.5);
             camera.lookAt(0, 1, 0);
+            camera.rotate
         }
         
         function setupControls() {
             controls = new OrbitControls(camera, renderer.domElement);
-            controls.minDistance = 2;
+            controls.minDistance = 1.5;
             controls.maxDistance = 10;
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
@@ -112,24 +113,46 @@
         async function loadModel() {
             const rgbeLoader = new RGBELoader();
             const gltfLoader = new GLTFLoader().setPath('/glb/');
-        
+
             const [texture, gltf] = await Promise.all([
-                rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/hdr-2?v=1722389067'),
-                gltfLoader.loadAsync('klug_disposer_v8(animation_edit).glb'),
+                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/hdr-2?v=1722389067'),
+                rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
+                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-srgb-phantom-fold6.hdr?v=1722497474'),
+                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-hinge-fold6.hdr?v=1722497474'),
+                // gltfLoader.loadAsync('klug_disposer_v8(animation_edit).glb'),
+                gltfLoader.loadAsync('klug_disposer_v10(material_dark).glb'),
             ]);
         
             console.log("gltf -> ", gltf);
-            texture.mapping = THREE.EquirectangularReflectionMapping; // 다른 효과 체크
+            texture.mapping = THREE.EquirectangularReflectionMapping;
             scene.environment = texture;
-            scene.add(gltf.scene);
+            const gltfModel = gltf.scene;
+            scene.add(gltfModel);
+
+            gltfModel.traverse((child) => {
+                if(child.isMesh) {
+                    child.material.envMapIntensity = 1.0;
+                    child.material.needsUpdate = true;
+                    // console.log("child.material.name (Material) --> ", child.material.name);
+                    // console.log("child.material --> ", child.material);
+                    // console.log("child.geometry --> ", child.geometry);
+                    if(child.name == "pearl_light_parent") {
+                        console.log(child)
+                        // child.material.opacity = 0;
+                        // child.material.transparent = true;
+                    }
+                    // child.material.opacity = 0.5;
+                    // child.material.transparent = true;
+                }
+            });
         
             objectCenter = new THREE.Vector3();
-            const box = new THREE.Box3().setFromObject(gltf.scene);
+            const box = new THREE.Box3().setFromObject(gltfModel);
             box.getCenter(objectCenter);
         
             controls.target.copy(objectCenter);
         
-            mixer = new THREE.AnimationMixer(gltf.scene);
+            mixer = new THREE.AnimationMixer(gltfModel);
             gltf.animations.forEach((clip, index) => {
                 const action = mixer.clipAction(clip);
                 actions.push(action);
@@ -151,24 +174,31 @@
         }
         
         function setupButtons() {
-            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 3));
-            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 3));
-            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 3, objectCenter.y, 0));
-            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 3, objectCenter.y, 0));
-            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 3, 0));
-            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 3, 0));
+            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            animation1.addEventListener('click', () => {
-                toggleAnimation(0);
-                toggleAnimation(1);
-                toggleAnimation(2);
-            });
-            animation2.addEventListener('click', () => toggleAnimation(3));
-            animation3.addEventListener('click', () => toggleAnimation(4));
+            frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
+            backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
+            leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
+            rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
+            topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
+            bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
+
+            animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
+            animation2.addEventListener('click', () => toggleAnimation([3]));
+            animation3.addEventListener('click', () => toggleAnimation([4]));
         }
         
         function setCameraTarget(x, y, z) {
             targetPosition.set(x, y, z);
+            console.log(targetPosition)
+            console.log("x -> ", x);
+            console.log("y -> ", y);
+            console.log("z -> ", z);
             if (!isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateCamera);
@@ -179,7 +209,7 @@
             const speed = 0.035;
             const distance = camera.position.distanceTo(targetPosition);
         
-            if (distance > 0.3) {
+            if (distance > 0.5) {
                 camera.position.lerp(targetPosition, speed);
                 camera.lookAt(objectCenter);
                 controls.update();
@@ -191,26 +221,28 @@
             }
         }
 
-        function toggleAnimation(index) {
-            if (!mixer || !actions[index]) return;
+        function toggleAnimation(indices) {
+            indices.forEach(index => {
+                if (!mixer || !actions[index]) return;
 
-            const action = actions[index];
-            const state = animationStates[index];
+                const action = actions[index];
+                const state = animationStates[index];
 
-            if (!state.isPlaying) {
-                startAnimation(action, state);
-            } else {
-                togglePlaybackDirection(action);
-            }
-
-            ensureLoopOnce(action);
-            monitorAnimation(action, state); // Start monitoring the animation
-
-            mixer.addEventListener('finished', (e) => {
-                if (e.action === action) {
-                    console.log("Animation finished");
-                    state.isPlaying = false; // Reset the playing state
+                if (!state.isPlaying) {
+                    startAnimation(action, state);
+                } else {
+                    togglePlaybackDirection(action);
                 }
+
+                ensureLoopOnce(action);
+                monitorAnimation(action, state);
+
+                mixer.addEventListener('finished', (e) => {
+                    if (e.action === action) {
+                        console.log("Animation finished");
+                        state.isPlaying = false;
+                    }
+                });
             });
         }
 
@@ -233,7 +265,6 @@
         }
 
         function monitorAnimation(action, state) {
-            const checkInterval = 16;
             const pauseThreshold = 0.1; 
 
             function checkTime() {
@@ -250,6 +281,10 @@
 
             requestAnimationFrame(checkTime);
         }
+
+        controls.addEventListener("change", () => {
+            // console.log(`Camera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
+        });
     </script>
     
     
