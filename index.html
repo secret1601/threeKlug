@@ -79,7 +79,7 @@
         
         let renderer, scene, camera, controls, objectCenter, mixer;
         let texture, gltfSatinGray, gltfWarmGerige, envMap; // hdr, glb, envm gltfModel
-        let currentGlb;
+        let currentGlb; // 현재 glb 파일 
         let targetPosition = new THREE.Vector3();
         let isAnimating = false;
         let animationInProgress = false;
@@ -120,11 +120,10 @@
         }
         
         function setupCamera() {
-            camera = new THREE.PerspectiveCamera(0.5, window.innerWidth / window.innerHeight, 0.05, 20);
-            // camera.position.set(2, 2, 2.5);
-            camera.position.set(0, 0, 0);
+            camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
+            camera.position.set(2, 2, 2.5);
             camera.enablePan = false;
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(0, 1, 0);
         }
         
         function setupControls() {
@@ -149,9 +148,10 @@
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                gltfLoader.loadAsync('test_0.01x.glb'),
+                // gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
                 // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
-                gltfLoader.loadAsync('test_0.01x.glb'),
+                gltfLoader.loadAsync('test_0.1x(optizmize).glb'),
+                gltfLoader.loadAsync('test_0.1x(optizmize).glb'),
             ]);
         
             envMap = texture;
@@ -208,7 +208,7 @@
         // 텍스처 환경 세팅, 모델 애니메이션 세팅 
         function setMaterialAnimation(glbObject) {
             if(currentGlb) {
-                if(currentGlb.scene == glbObject.scene) console.log(true);
+                if(currentGlb.scene == glbObject.scene) return;
             }
             currentGlb = glbObject;
             if(glbObject === gltfSatinGray) setMaterial(glbObject);
