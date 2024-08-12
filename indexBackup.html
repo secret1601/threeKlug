@@ -8,7 +8,16 @@
         body { overflow: hidden; margin: 0; padding: 0; }
         .container { position: relative; display: block; }
         canvas { position: relative; }
-        .buttons { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: block; z-index: 1;}
+        button { background: none; border: 0; cursor: pointer;}
+        .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: block; z-index: 1;}
+        .switch-scene__box { margin-bottom: 10px; }
+        .switch-scene__box button { border: 2px solid rgb(32, 76, 143); color: #fff; padding: 5px 10px; }
+        .animation__box { margin-bottom: 10px; }
+        .animation__box button{ border: 2px solid rgb(36, 177, 111); color: #fff; padding: 5px 10px; }
+        .colorchip__box { }
+        .colorchip__box button.select{ border: 2px solid #fff; }
+        #satinGray { background: #292929; border-radius: 50%; width: 25px; height: 25px; }
+        #warmGreige { background: #cbcbcc; border-radius: 50%; width: 25px; height: 25px; }
     </style>
     <script type="importmap">
         {
@@ -23,23 +32,33 @@
 <body>
 
     <div class="container">
-        <div class="buttons">
-            <button id="front">Front</button>
-            <button id="back">Back</button>
-            <button id="left">Left</button>
-            <button id="right">Right</button>
-            <button id="top">Top</button>
-            <button id="bottom">Bottom</button>
-            <button id="animation1">Animation 1</button>
-            <button id="animation2">Animation 2</button>
-            <button id="animation3">Animation 3</button>
+        <div class="buttons__inner">
+            <div class="switch-scene__box">
+                <button id="front">Front</button>
+                <button id="back">Back</button>
+                <button id="left">Left</button>
+                <button id="right">Right</button>
+                <button id="top">Top</button>
+                <button id="bottom">Bottom</button>
+            </div>
+            <div class="animation__box">
+                <button id="animation1">Animation 1</button>
+                <button id="animation2">Animation 2</button>
+                <button id="animation3">Animation 3</button>
+            </div>
+            <div class="colorchip__box">
+                <button id="satinGray" class="select"></button>
+                <button id="warmGreige"></button>
+            </div>
         </div>
         <canvas id="MyCanvas"></canvas>
     </div>
+
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     
         const frontButton = document.querySelector('#front');
@@ -51,8 +70,16 @@
         const animation1 = document.querySelector('#animation1');
         const animation2 = document.querySelector('#animation2');
         const animation3 = document.querySelector('#animation3');
+        const satinGrayButton = document.querySelector('#satinGray');
+        const warmGreigeButton = document.querySelector('#warmGreige');
+
+        const pearl_light_arr = ["lid_part1","lid_part2","lid_part3","pearl_light_parent","개체_32","개체_33"];
+        const pearl_dark_arr = ["drawer","pearl_dark_parent","개체_3","개체_11","개체_14","개체_15","개체_16","개체_17","개체_18","개체_20","개체_22001","개체_45","개체_46","개체_58","handle_inside"];
+        const pearl_glossy_arr = ["handle_outside"];
         
         let renderer, scene, camera, controls, objectCenter, mixer;
+        let texture, gltfSatinGray, gltfWarmGerige, envMap; // hdr, glb, envm gltfModel
+        let test;
         let targetPosition = new THREE.Vector3();
         let isAnimating = false;
         let animationInProgress = false;
@@ -66,7 +93,9 @@
             setupScene();
             setupCamera();
             setupControls();
+
             await loadModel();
+            setMaterialAnimation(gltfSatinGray);
         
             window.addEventListener('resize', onWindowResize);
             setupButtons();
@@ -81,7 +110,6 @@
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             // 매핑 노출 수준 설정
             renderer.toneMappingExposure = 1;
-
             renderer.outputEncoding = THREE.sRGBEncoding;
         }
         
@@ -94,8 +122,8 @@
         function setupCamera() {
             camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
             camera.position.set(2, 2, 2.5);
+            camera.enablePan = false;
             camera.lookAt(0, 1, 0);
-            camera.rotate
         }
         
         function setupControls() {
@@ -108,52 +136,99 @@
             controls.target.set(0, 0.2, 0);
             controls.update();
         }
-        
-        // 모델 비동기 로드, 텍스처 환경 세팅, 모델 애니메이션 세팅 
-        async function loadModel() {
-            const rgbeLoader = new RGBELoader();
-            const gltfLoader = new GLTFLoader().setPath('/glb/');
 
-            const [texture, gltf] = await Promise.all([
-                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/hdr-2?v=1722389067'),
+        async function loadModel(){
+            const rgbeLoader = new RGBELoader();
+            const dracoLoader = new DRACOLoader();
+
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
+
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
+            gltfLoader.setDRACOLoader(dracoLoader);
+
+            [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-srgb-phantom-fold6.hdr?v=1722497474'),
-                // rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-hinge-fold6.hdr?v=1722497474'),
-                // gltfLoader.loadAsync('klug_disposer_v8(animation_edit).glb'),
-                gltfLoader.loadAsync('klug_disposer_v10(material_dark).glb'),
+                gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
+                // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                gltfLoader.loadAsync('test_0.1x.glb'),
             ]);
         
-            console.log("gltf -> ", gltf);
-            texture.mapping = THREE.EquirectangularReflectionMapping;
-            scene.environment = texture;
-            const gltfModel = gltf.scene;
-            scene.add(gltfModel);
+            envMap = texture;
+            envMap.mapping = THREE.EquirectangularReflectionMapping;
+            scene.environment = envMap;
+        }
+        function setMaterial(glbObject) {
 
-            gltfModel.traverse((child) => {
+            const material_light = new THREE.MeshStandardMaterial({
+                color: 0xcccccc,
+                metalness: 1.0,
+                roughness: 0.342,
+                envMap: envMap,
+            });
+
+            const material_dark = new THREE.MeshStandardMaterial({
+                color: 0x666666,
+                metalness: 1.0,
+                roughness: 0.342,
+                envMap: envMap,
+            });
+
+            const material_glossy = new THREE.MeshStandardMaterial({
+                color: 0x666666,
+                metalness: 1.0,
+                roughness: 0.1,
+                envMap: envMap,
+            });
+
+            glbObject.scene.traverse((child) => {
                 if(child.isMesh) {
-                    child.material.envMapIntensity = 1.0;
-                    child.material.needsUpdate = true;
-                    // console.log("child.material.name (Material) --> ", child.material.name);
-                    // console.log("child.material --> ", child.material);
-                    // console.log("child.geometry --> ", child.geometry);
-                    if(child.name == "pearl_light_parent") {
-                        console.log(child)
-                        // child.material.opacity = 0;
-                        // child.material.transparent = true;
-                    }
-                    // child.material.opacity = 0.5;
-                    // child.material.transparent = true;
+                    pearl_light_arr.forEach(childName => {
+                        if(child.name === `${childName}`){
+                            // console.log(child.name);
+                            child.material = material_light;
+                        }
+                    });
+                    pearl_dark_arr.forEach(childName => {
+                        if(child.name === `${childName}`){
+                            // console.log(child.name);
+                            child.material = material_dark;
+                        }
+                    });
+                    pearl_glossy_arr.forEach(childName => {
+                        if(child.name === `${childName}`){
+                            // console.log(child.name);
+                            child.material = material_glossy;
+                        }
+                    });
                 }
             });
+        }
+        
+        // 텍스처 환경 세팅, 모델 애니메이션 세팅 
+        function setMaterialAnimation(glbObject) {
+            if(test) {
+                if(test.scene == glbObject.scene) console.log(true);
+            }
+            test = glbObject;
+            if(glbObject === gltfSatinGray) setMaterial(glbObject);
+
+            if (mixer) mixer.stopAllAction();
+            actions = [];
+
+            const gltfModel = glbObject.scene;
+            console.log("gltfModel --> ", gltfModel);
+            scene.clear();
+            scene.add(gltfModel);
         
             objectCenter = new THREE.Vector3();
             const box = new THREE.Box3().setFromObject(gltfModel);
             box.getCenter(objectCenter);
         
             controls.target.copy(objectCenter);
+
         
             mixer = new THREE.AnimationMixer(gltfModel);
-            gltf.animations.forEach((clip, index) => {
+            glbObject.animations.forEach((clip, index) => {
                 const action = mixer.clipAction(clip);
                 actions.push(action);
                 animationStates[index] = { isPlaying: false, time: 0 }; // Initialize animation states
@@ -174,31 +249,30 @@
         }
         
         function setupButtons() {
-            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
-            backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
-            leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
-            rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
-            topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
-            bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
+            // frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
+            // backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
+            // leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
+            // rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
+            // topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
+            // bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
             animation3.addEventListener('click', () => toggleAnimation([4]));
+            
+            satinGrayButton.addEventListener("click", () => setMaterialAnimation(gltfSatinGray));
+            warmGreigeButton.addEventListener("click", () =>setMaterialAnimation(gltfWarmGerige));
         }
         
         function setCameraTarget(x, y, z) {
             targetPosition.set(x, y, z);
-            console.log(targetPosition)
-            console.log("x -> ", x);
-            console.log("y -> ", y);
-            console.log("z -> ", z);
             if (!isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateCamera);
@@ -227,6 +301,9 @@
 
                 const action = actions[index];
                 const state = animationStates[index];
+
+                console.log("actione -> ", action);
+                console.log("state -> ", state);
 
                 if (!state.isPlaying) {
                     startAnimation(action, state);

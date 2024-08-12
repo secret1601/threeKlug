@@ -4,272 +4,412 @@
     <title>벽돌깨기 게임</title>
     <style>
         * { padding: 0; margin: 0; }
+        body { max-width: 480px; margin: 0 auto; background: rgb(27, 27, 27); COLOR: #FFF;}
         canvas { background: #eee; display: block; margin: 0 auto; }
         button { position: relative; display: block; background-color: black; color: #fff; padding: 10px; border-radius: 10px; margin-bottom: 5px; }
         button:hover { background: #ddd; color: #000; }
+        .hell-clear-modal { position: fixed; top: 50%; left: 50%; transform:translate(-50%, -50%); display: block; width: 480px; height: 500px; border:2px solid peachpuff; border-radius: 20px; background: #000; color: #fff; }
+        .hell-clear-modal::after { position: absolute; left: 0; top: 0; bottom: 0; right: 0; width: 100%; height: 100%; background: (0,0,0, 0.1); }
     </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="480" height="500" style="padding-top: 30px;"></canvas>
+<canvas id="gameCanvas" width="480" height="800" style="padding-top: 30px;"></canvas>
 <script>
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-    const ballRadius = 10;
-    const paddleHeight = 10;
-    const paddleWidth = 75;
-    let paddleX = (canvas.width - paddleWidth) / 2;
-    let x = canvas.width / 2;
-    let y = canvas.height - 30;
-    let dx = 2;
-    let dy = -2;
-    let rightPressed = false;
-    let leftPressed = false;
-    let gameState = 'notStarted';
-    let currentLevel = 0;   
-    let gameSpeed = 1;
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const ballRadius = 10;
+        const paddleHeight = 10;
+        const paddleWidth = 75;
+        let paddleX = (canvas.width - paddleWidth) / 2;
+        let x = canvas.width / 2;
+        let y = canvas.height - 30;
+        let dx = 2;
+        let dy = -2;
+        let rightPressed = false;
+        let leftPressed = false;
+        let gameState = 'notStarted';
+        let currentLevel = 0;
+        let gameSpeed = 1;
+        let hellInterval1, hellInterval2;
+        let condition1Satisfied = false;
+        let condition2Satisfied = false;    
 
-    let brickRowCount = 3;
-    const brickColumnCount = 5;
-    const brickWidth = 75;
-    const brickHeight = 20;
-    const brickPadding = 10;
-    const brickOffsetTop = 30;
-    const brickOffsetLeft = 30;
+        let brickRowCount = 3;
+        const brickColumnCount = 5;
+        const brickWidth = 75;
+        const brickHeight = 20;
+        const brickPadding = 10;
+        const brickOffsetTop = 30;
+        const brickOffsetLeft = 30;
 
-    let bricks = [];
+        let bricks = [];
 
-    function init() {
-        bricks = [];
-        for (let c = 0; c < brickColumnCount; c++) {
-            bricks[c] = [];
-            for (let r = 0; r < brickRowCount; r++) {
-                bricks[c][r] = { x: 0, y: 0, status: 1 };
-            }
-        }
-        x = canvas.width / 2;
-        y = canvas.height - 30;
-        dx = 2;
-        dy = -2;
-        paddleX = (canvas.width - paddleWidth) / 2;
-    }
-
-    document.addEventListener("keydown", keyDownHandler, false);
-    document.addEventListener("keyup", keyUpHandler, false);
-
-    const startButton = document.createElement('button');
-    startButton.textContent = 'START';
-    startButton.addEventListener('click', startGame);
-
-
-    const speedButton = document.createElement('button');
-    speedButton.textContent = 'SPEED x2';
-    speedButton.addEventListener('click', toggleSpeed);
-
-    document.body.appendChild(startButton);
-    document.body.appendChild(speedButton);
-
-    const nextButton = document.createElement('button');
-    nextButton.textContent = 'NEXT LEVEL';
-    nextButton.style.display = 'none';
-    nextButton.addEventListener('click', nextLevel);
-
-    const restartButton = document.createElement('button');
-    restartButton.textContent = 'RESTART';
-    restartButton.style.display = 'none';
-    restartButton.addEventListener('click', restartGame);
-
-    document.body.appendChild(nextButton);
-    document.body.appendChild(restartButton);
-
-    function toggleSpeed() {
-        if (gameSpeed === 1) {
-            gameSpeed = 2;
-            speedButton.textContent = 'SPEED x2';
-        } else {
-            gameSpeed = 1;
-            speedButton.textContent = 'SPEED x1';
-        }
-    }
-
-    function startGame() {
-        gameState = 'playing';
-        startButton.style.display = 'none';
-        nextButton.style.display = 'none';
-        restartButton.style.display = 'none';
-        init();
-        draw();
-    }
-
-    function nextLevel() {
-        currentLevel++;
-        brickRowCount += 2;
-        gameState = 'playing';
-        nextButton.style.display = 'none';
-        restartButton.style.display = 'none';
-        init();
-        draw();
-    }
-
-    function restartGame() {
-        currentLevel = 0;
-        brickRowCount = 3;
-        gameState = 'notStarted';
-        startButton.style.display = 'block';
-        nextButton.style.display = 'none';
-        restartButton.style.display = 'none';
-    }
-
-    function drawBricks() {
-        for (let c = 0; c < brickColumnCount; c++) {
-            for (let r = 0; r < brickRowCount; r++) {
-                if (bricks[c][r].status == 1) {
-                    const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-                    const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-                    bricks[c][r].x = brickX;
-                    bricks[c][r].y = brickY;
-                    ctx.beginPath();
-                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                    ctx.fillStyle = "#0095DD";
-                    ctx.fill();
-                    ctx.closePath();
-                    
-                    ctx.font = "12px Arial";
-                    ctx.fillStyle = "#FFFFFF";
-                    ctx.textAlign = "center";
-                    ctx.fillText("변재은", brickX + brickWidth / 2, brickY + brickHeight / 2 + 4);
+        function init() {
+            bricks = [];
+            for (let c = 0; c < brickColumnCount; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < brickRowCount; r++) {
+                    bricks[c][r] = { x: 0, y: 0, status: 1 };
                 }
             }
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dx = 2;
+            dy = -2;
+            paddleX = (canvas.width - paddleWidth) / 2;
         }
-    }
 
-    function collisionDetection() {
-        for (let c = 0; c < brickColumnCount; c++) {
-            for (let r = 0; r < brickRowCount; r++) {
-                let b = bricks[c][r];
-                if (b.status == 1) {
-                    if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
-                        dy = -dy;
-                        b.status = 0;
-                        checkVictory();
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        const startButton = document.createElement('button');
+        startButton.textContent = 'START';
+        startButton.addEventListener('click', startGame);
+        document.body.appendChild(startButton);
+
+        const hellButton = document.createElement('button');
+        hellButton.innerHTML = `분노한 재은 모드 (Hell)<br>3.5초 마다 "지옥의 재은" 블럭이 2개 생성됩니다.`;
+        hellButton.style.background = "red";
+        hellButton.style.color = "white";
+        hellButton.addEventListener('click', startHellMode);
+        document.body.appendChild(hellButton);
+
+        const speedButton = document.createElement('button');
+        speedButton.textContent = 'SPEED x3';
+        speedButton.addEventListener('click', toggleSpeed);
+        document.body.appendChild(speedButton);
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = 'NEXT LEVEL';
+        nextButton.style.display = 'none';
+        nextButton.addEventListener('click', nextLevel);
+        document.body.appendChild(nextButton);
+
+        const restartButton = document.createElement('button');
+        restartButton.textContent = 'RESTART';
+        restartButton.style.display = 'none';
+        restartButton.addEventListener('click', restartGame);
+        document.body.appendChild(restartButton);
+
+        function toggleSpeed() {
+            if (gameSpeed === 1) {
+                gameSpeed = 3;
+                speedButton.textContent = 'SPEED x3';
+            } else {
+                gameSpeed = 1;
+                speedButton.textContent = 'SPEED x1';
+            }
+        }
+
+        function startGame() {
+            gameState = 'playing';
+            startButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            init();
+            draw();
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            brickRowCount += 2;
+            gameState = 'playing';
+            nextButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            init();
+            draw();
+        }
+
+        function restartGame() {
+            currentLevel = 0;
+            brickRowCount = 3;
+            gameState = 'notStarted';
+            startButton.style.display = 'block';
+            nextButton.style.display = 'none';
+            restartButton.style.display = 'none';
+        }
+
+        function drawBricks() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status == 1) {
+                        const brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                        const brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                        bricks[c][r].x = brickX;
+                        bricks[c][r].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                        ctx.fillStyle = "#0095DD";
+                        ctx.fill();
+                        ctx.closePath();
+
+                        ctx.font = "12px Arial";
+                        ctx.fillStyle = "#FFFFFF";
+                        ctx.textAlign = "center";
+                        ctx.fillText("변재은", brickX + brickWidth / 2, brickY + brickHeight / 2 + 4);
                     }
                 }
             }
         }
-    }
 
-    function keyDownHandler(e) {
-        if (e.key == "Right" || e.key == "ArrowRight") {
-            rightPressed = true;
-        }
-        else if (e.key == "Left" || e.key == "ArrowLeft") {
-            leftPressed = true;
-        }
-    }
-
-    function keyUpHandler(e) {
-        if (e.key == "Right" || e.key == "ArrowRight") {
-            rightPressed = false;
-        }
-        else if (e.key == "Left" || e.key == "ArrowLeft") {
-            leftPressed = false;
-        }
-    }
-
-    function drawBall() {
-        ctx.beginPath();
-        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-        ctx.fillStyle = "#000";
-        ctx.fill();
-        ctx.closePath();
-        ctx.font = "15px Arial";
-        ctx.fillStyle = "#FFFFFF";
-        ctx.textAlign = "center";
-        ctx.fillText("주먹", x, y + 4);
-    }
-
-    function drawPaddle() {
-        ctx.beginPath();
-        ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-        ctx.fillStyle = "#0095DD";
-        ctx.fill();
-        ctx.closePath();
-    }
-
-    function draw() {
-        if (gameState === 'playing') {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawBricks();
-            collisionDetection();
-            drawBall();
-            drawPaddle();
-
-            if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-                dx = -dx;
-            }
-            if (y + dy < ballRadius) {
-                dy = -dy;
-            } else if (y + dy > canvas.height - ballRadius) {
-                if (x > paddleX && x < paddleX + paddleWidth) {
-                    dy = -dy;
-                }
-                else {
-                    gameState = 'ended';
-                    checkGameOver();
-                }
-            }
-
-            if (rightPressed && paddleX < canvas.width - paddleWidth) {
-                paddleX += 7;
-            }
-            else if (leftPressed && paddleX > 0) {
-                paddleX -= 7;
-            }
-
-            x += dx * gameSpeed;
-            y += dy * gameSpeed;
-
-            requestAnimationFrame(draw);
-        }
-    }
-
-    function checkGameOver() {
-        if (gameState === 'ended') {
-            if (areAllBricksCleared()) {
-                nextButton.style.display = 'block';
-            }
-            restartButton.style.display = 'block';
-        }
-    }
-
-    function areAllBricksCleared() {
-        for (let c = 0; c < brickColumnCount; c++) {
-            for (let r = 0; r < brickRowCount; r++) {
-                if (bricks[c][r].status == 1) {
-                    return false;
+        function collisionDetection() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if (b.status == 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            checkVictory();
+                        }
+                    }
                 }
             }
         }
-        return true;
-    }
 
-    function checkVictory() {
-        let allCleared = true;  
-        for(let c = 0; c < brickColumnCount; c++) {
-            for(let r = 0; r < brickRowCount; r++) {
-                if(bricks[c][r].status === 1) {
+        function keyDownHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = true;
+            }
+            else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = false;
+            }
+            else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.closePath();
+            ctx.font = "15px Arial";
+            ctx.fillStyle = "#FFFFFF";
+            ctx.textAlign = "center";
+            ctx.fillText("주먹", x, y + 4);
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+        function collisionDetectionInHellMode() {
+
+            
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    let b = bricks[c][r];
+                    if (b.status == 1) {
+                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                            dy = -dy;
+                            b.status = 0;
+                            condition1Satisfied = true;
+                            // You may want to add `checkVictory()` here if needed
+                        }
+                    }
+                }
+            }
+
+            // 두 번째 조건 검사
+            for (let i = 0; i < bricks.length; i++) {
+                if (bricks[i].status == 1) {
+                    if (x > bricks[i].x && x < bricks[i].x + brickWidth && y > bricks[i].y && y < bricks[i].y + brickHeight) {
+                        dy = -dy;
+                        bricks[i].status = 0;
+                        condition2Satisfied = true;
+                    }
+                }
+            }
+            if (condition1Satisfied && condition2Satisfied) {
+                checkVictoryInHellMode();
+            }   
+        }
+
+        function checkVictoryInHellMode() {
+            let allCleared = true;
+            for (let i = 0; i < bricks.length; i++) {
+                if (bricks[i].status === 1) {
                     allCleared = false;
                     break;
                 }
             }
-            if(!allCleared) break;
+            if (allCleared) {
+                gameState = 'victory  hell';
+                const helloClearModal = document.createElement("div");
+                helloClearModal.classList.add("hell-clear-modal");
+                helloClearModal.innerHTML = `<h2 style="display: block; text-align: cetner; font-size:30px;">축하드립니다!!<br> 사악한 변재은을 물리치셨습니다 !!!</h2><span style="display: block; text-align: cetner; font-size: 15px;">남은 하루도 화이팅 하세요!</span>`
+                document.body.appendChild(helloClearModal);
+
+                startButton.style.display = 'block';
+                nextButton.style.display = 'none';
+                restartButton.style.display = 'none';
+                clearInterval(hellInterval1); // 추가된 부분
+                clearInterval(hellInterval2); // 추가된 부분
+            }
         }
-        if(allCleared) {
-            gameState = 'victory';
-            nextButton.style.display = 'block';
-            restartButton.style.display = 'block';
+
+        function draw() {
+            if (gameState === 'hell') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
+                drawBricks();
+                drawHellBricks(); // 추가된 부분
+                // collisionDetection();
+                collisionDetectionInHellMode();
+                drawBall();
+                drawPaddle();
+
+                if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                        dx = -dx;
+                    }
+                    if (y + dy < ballRadius) {
+                        dy = -dy;
+                    } else if (y + dy > canvas.height - ballRadius) {
+                        if (x > paddleX && x < paddleX + paddleWidth) {
+                            dy = -dy;
+                        }
+                        else {
+                            gameState = 'ended';
+                            checkGameOver();
+                        }
+                    }
+
+                    if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                        paddleX += 7;
+                    }
+                    else if (leftPressed && paddleX > 0) {
+                        paddleX -= 7;
+                    }
+
+                    x += dx * gameSpeed;
+                    y += dy * gameSpeed;
+
+                requestAnimationFrame(draw);
+            }
+            
+
+            if (gameState === 'playing') {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawBackground();
+                    drawBricks();
+                    collisionDetection();
+                    drawBall();
+                    drawPaddle();
+
+                    if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+                        dx = -dx;
+                    }
+                    if (y + dy < ballRadius) {
+                        dy = -dy;
+                    } else if (y + dy > canvas.height - ballRadius) {
+                        if (x > paddleX && x < paddleX + paddleWidth) {
+                            dy = -dy;
+                        }
+                        else {
+                            gameState = 'ended';
+                            checkGameOver();
+                        }
+                    }
+
+                    if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                        paddleX += 7;
+                    }
+                    else if (leftPressed && paddleX > 0) {
+                        paddleX -= 7;
+                    }
+
+                    x += dx * gameSpeed;
+                    y += dy * gameSpeed;
+
+                    requestAnimationFrame(draw);
+                }
         }
-    }
+
+        function checkGameOver() {
+            if (gameState === 'ended') {
+                if (areAllBricksCleared()) {
+                    nextButton.style.display = 'block';
+                }
+                restartButton.style.display = 'block';
+            }
+        }
+
+        function areAllBricksCleared() {
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status == 1) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function checkVictory() {
+            let allCleared = true;
+            for (let c = 0; c < brickColumnCount; c++) {
+                for (let r = 0; r < brickRowCount; r++) {
+                    if (bricks[c][r].status === 1) {
+                        allCleared = false;
+                        break;
+                    }
+                }
+                if (!allCleared) break;
+            }
+            if (allCleared) {
+                gameState = 'victory';
+                nextButton.style.display = 'block';
+                restartButton.style.display = 'block';
+            }
+        }
+
+        function startHellMode() {
+            gameState = 'hell';
+            hellInterval1 = setInterval(createHellBrick, 3500);
+            hellInterval2 = setInterval(createHellBrick, 3500);
+            hellButton.style.display = 'none';
+            startButton.style.display = 'none';
+            nextButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            init();
+            draw();
+
+        }
+        function createHellBrick() {
+            const brickX = Math.floor(Math.random() * (brickColumnCount)) * (brickWidth + brickPadding) + brickOffsetLeft;
+            const brickY = Math.floor(Math.random() * (brickRowCount + 1)) * (brickHeight + brickPadding) + brickOffsetTop;
+            console.log(brickX)
+            console.log(brickY)
+            bricks.push({ x: brickX, y: brickY, status: 1 });
+        }
+
+        function drawHellBricks() {
+            for (let i = 0; i < bricks.length; i++) {
+                if (bricks[i].status == 1) {
+                ctx.beginPath();
+                ctx.rect(bricks[i].x, bricks[i].y, brickWidth, brickHeight);
+                ctx.fillStyle = "#FF0000";
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.font = "12px Arial";
+                ctx.fillStyle = "#FFFFFF";
+                ctx.textAlign = "center";
+                ctx.fillText("재은의 분노", bricks[i].x + brickWidth / 2, bricks[i].y + brickHeight / 2 + 4);
+                }
+            }
+        }
 
     function drawBackground() {
         ctx.font = "30px Arial";

@@ -53,6 +53,7 @@
         </div>
         <canvas id="MyCanvas"></canvas>
     </div>
+
     <script type="module">
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -78,6 +79,7 @@
         
         let renderer, scene, camera, controls, objectCenter, mixer;
         let texture, gltfSatinGray, gltfWarmGerige, envMap; // hdr, glb, envm gltfModel
+        let test;
         let targetPosition = new THREE.Vector3();
         let isAnimating = false;
         let animationInProgress = false;
@@ -93,19 +95,10 @@
             setupControls();
 
             await loadModel();
-            setAnimation(gltfSatinGray);
+            setMaterialAnimation(gltfSatinGray);
         
             window.addEventListener('resize', onWindowResize);
             setupButtons();
-
-            satinGrayButton.addEventListener("click", () => {
-                console.log("gltfSatinGray -> ", gltfSatinGray);
-                setAnimation(gltfSatinGray)
-            });
-            warmGreigeButton.addEventListener("click", () => {
-                console.log("gltfWarmGerige -> ", gltfWarmGerige);
-                setAnimation(gltfWarmGerige)
-            });
         }
         
         // 렌더러 설정
@@ -129,6 +122,7 @@
         function setupCamera() {
             camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
             camera.position.set(2, 2, 2.5);
+            camera.enablePan = false;
             camera.lookAt(0, 1, 0);
         }
         
@@ -149,13 +143,14 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                gltfLoader.loadAsync('test_0.1x.glb'),
+                // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                gltfLoader.loadAsync('test_0.1x.glb'),
             ]);
         
             envMap = texture;
@@ -189,19 +184,19 @@
                 if(child.isMesh) {
                     pearl_light_arr.forEach(childName => {
                         if(child.name === `${childName}`){
-                            console.log(child.name);
+                            // console.log(child.name);
                             child.material = material_light;
                         }
                     });
                     pearl_dark_arr.forEach(childName => {
                         if(child.name === `${childName}`){
-                            console.log(child.name);
+                            // console.log(child.name);
                             child.material = material_dark;
                         }
                     });
                     pearl_glossy_arr.forEach(childName => {
                         if(child.name === `${childName}`){
-                            console.log(child.name);
+                            // console.log(child.name);
                             child.material = material_glossy;
                         }
                     });
@@ -209,14 +204,19 @@
             });
         }
         
-        // 모델 비동기 로드, 텍스처 환경 세팅, 모델 애니메이션 세팅 
-        function setAnimation(glbObject) {
+        // 텍스처 환경 세팅, 모델 애니메이션 세팅 
+        function setMaterialAnimation(glbObject) {
+            if(test) {
+                if(test.scene == glbObject.scene) console.log(true);
+            }
+            test = glbObject;
             if(glbObject === gltfSatinGray) setMaterial(glbObject);
 
             if (mixer) mixer.stopAllAction();
             actions = [];
 
             const gltfModel = glbObject.scene;
+            console.log("gltfModel --> ", gltfModel);
             scene.clear();
             scene.add(gltfModel);
         
@@ -249,31 +249,30 @@
         }
         
         function setupButtons() {
-            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
-            backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
-            leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
-            rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
-            topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
-            bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
+            // frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
+            // backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
+            // leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
+            // rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
+            // topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
+            // bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
             animation3.addEventListener('click', () => toggleAnimation([4]));
+            
+            satinGrayButton.addEventListener("click", () => setMaterialAnimation(gltfSatinGray));
+            warmGreigeButton.addEventListener("click", () =>setMaterialAnimation(gltfWarmGerige));
         }
         
         function setCameraTarget(x, y, z) {
             targetPosition.set(x, y, z);
-            console.log(targetPosition)
-            console.log("x -> ", x);
-            console.log("y -> ", y);
-            console.log("z -> ", z);
             if (!isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateCamera);
