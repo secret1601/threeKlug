@@ -257,19 +257,19 @@
         }
         
         function setupButtons() {
-            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
-            backButton.addEventListener('click', () => moveCamera(0, 0, -3));
-            leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
-            rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
-            topButton.addEventListener('click', () => moveCamera(0, 3, 0));
-            bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
+            // frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
+            // backButton.addEventListener('click', () => moveCamera(0, 0, -3));
+            // leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
+            // rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
+            // topButton.addEventListener('click', () => moveCamera(0, 3, 0));
+            // bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
