@@ -133,6 +133,8 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.enablePan = false;
+            // controls.enableZoom = false;
+            controls.screenSpacePanning = false
             controls.target.set(0, 0.2, 0);
             controls.update();
         }
@@ -248,19 +250,19 @@
         }
         
         function setupButtons() {
-            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            // frontButton.addEventListener('click', () => setCameraTarget(0.0413, 0.0584, 3.6274));
-            // backButton.addEventListener('click', () => setCameraTarget(0.0320, 0.0405, -3.6817));
-            // leftButton.addEventListener('click', () => setCameraTarget(-3.6584, 0.1304, -0.0641));
-            // rightButton.addEventListener('click', () => setCameraTarget(3.6604, 0.2018, -0.0185));
-            // topButton.addEventListener('click', () => setCameraTarget(-0, 3.9248, -0.0276));
-            // bottomButton.addEventListener('click', () => setCameraTarget(-0, -3.9248, -0.0276));
+            frontButton.addEventListener('click', () => setCameraTarget(0, 0, 3));
+            backButton.addEventListener('click', () => setCameraTarget(0, 0, -3));
+            leftButton.addEventListener('click', () => setCameraTarget(-3, 0, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(3, 0, 0));
+            topButton.addEventListener('click', () => setCameraTarget(0, 3, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(0, -3, 0));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
@@ -271,6 +273,11 @@
         }
         
         function setCameraTarget(x, y, z) {
+
+            // camera.position.set(x, y, z); // 카메라의 위치를 바로 설정
+            // camera.lookAt(objectCenter);  // 카메라가 objectCenter를 바라보도록 설정
+            // controls.update();  // 컨트롤 업데이트
+
             targetPosition.set(x, y, z);
             if (!isAnimating) {
                 isAnimating = true;
@@ -282,10 +289,11 @@
             const speed = 0.035;
             const distance = camera.position.distanceTo(targetPosition);
         
+            camera.position.lerp(targetPosition, speed);
+            camera.lookAt(objectCenter);
+            controls.update();
+
             if (distance > 0.5) {
-                camera.position.lerp(targetPosition, speed);
-                camera.lookAt(objectCenter);
-                controls.update();
                 controls.enabled = false;
                 requestAnimationFrame(animateCamera);
             } else {
