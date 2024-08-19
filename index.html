@@ -148,15 +148,15 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
                 // gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
                 // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
-                gltfLoader.loadAsync('phone.glb'),
-                gltfLoader.loadAsync('phone.glb'),
+                gltfLoader.loadAsync('test(delete part).glb'),
+                gltfLoader.loadAsync('test(delete part).glb'),
             ]);
         
             envMap = texture;
@@ -257,19 +257,19 @@
         }
         
         function setupButtons() {
-            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
-            backButton.addEventListener('click', () => moveCamera(0, 0, -3));
-            leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
-            rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
-            topButton.addEventListener('click', () => moveCamera(0, 3, 0));
-            bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
+            // frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
+            // backButton.addEventListener('click', () => moveCamera(0, 0, -3));
+            // leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
+            // rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
+            // topButton.addEventListener('click', () => moveCamera(0, 3, 0));
+            // bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
