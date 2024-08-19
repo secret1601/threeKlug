@@ -19,6 +19,7 @@
         #satinGray { background: #292929; border-radius: 50%; width: 25px; height: 25px; }
         #warmGreige { background: #cbcbcc; border-radius: 50%; width: 25px; height: 25px; }
     </style>
+
     <script type="importmap">
         {
             "imports": {
@@ -27,6 +28,7 @@
             }
         }
     </script>
+
 </head>
 
 <body>
@@ -60,6 +62,7 @@
         import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import * as TWEEN from 'https://cdn.skypack.dev/@tweenjs/tween.js';
     
         const frontButton = document.querySelector('#front');
         const backButton = document.querySelector('#back');
@@ -145,13 +148,15 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                // gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
+                // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                gltfLoader.loadAsync('test(delete part).glb'),
+                gltfLoader.loadAsync('test(delete part).glb'),
             ]);
         
             envMap = texture;
@@ -245,24 +250,26 @@
         
         function render() {
             controls.update();
+
+            TWEEN.update();
             if (mixer) mixer.update(0.01);
             renderer.render(scene, camera);
         }
         
         function setupButtons() {
-            // frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            // backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            // leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            // rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            // topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            // bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
+            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
+            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
+            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
         
-            frontButton.addEventListener('click', () => setCameraTarget(0, 0, 3));
-            backButton.addEventListener('click', () => setCameraTarget(0, 0, -3));
-            leftButton.addEventListener('click', () => setCameraTarget(-3, 0, 0));
-            rightButton.addEventListener('click', () => setCameraTarget(3, 0, 0));
-            topButton.addEventListener('click', () => setCameraTarget(0, 3, 0));
-            bottomButton.addEventListener('click', () => setCameraTarget(0, -3, 0));
+            // frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
+            // backButton.addEventListener('click', () => moveCamera(0, 0, -3));
+            // leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
+            // rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
+            // topButton.addEventListener('click', () => moveCamera(0, 3, 0));
+            // bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
 
             animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
             animation2.addEventListener('click', () => toggleAnimation([3]));
@@ -270,6 +277,13 @@
             
             satinGrayButton.addEventListener("click", () => setMaterialAnimation(gltfSatinGray));
             warmGreigeButton.addEventListener("click", () =>setMaterialAnimation(gltfWarmGerige));
+        }
+
+        function moveCamera(x, y, z) {
+            new TWEEN.Tween(camera.position)
+                .to({ x: x, y: y, z: z }, 1000) // 1초 동안 애니메이션
+                .easing(TWEEN.Easing.Quadratic.InOut)
+                .start();
         }
         
         function setCameraTarget(x, y, z) {
