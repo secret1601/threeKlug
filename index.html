@@ -79,7 +79,9 @@
         const pearl_light_arr = ["lid_part1","lid_part2","lid_part3","pearl_light_parent","개체_32","개체_33"];
         const pearl_dark_arr = ["drawer","pearl_dark_parent","개체_3","개체_11","개체_14","개체_15","개체_16","개체_17","개체_18","개체_20","개체_22001","개체_45","개체_46","개체_58","handle_inside"];
         const pearl_glossy_arr = ["handle_outside"];
-        
+
+        const fixedDistance = 5;
+
         let renderer, scene, camera, controls, objectCenter, mixer;
         let texture, gltfSatinGray, gltfWarmGerige, envMap; // hdr, glb, envm gltfModel
         let currentGlb; // 현재 glb 파일 
@@ -148,15 +150,15 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
                 // gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
                 // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
-                gltfLoader.loadAsync('test(delete part).glb'),
-                gltfLoader.loadAsync('test(delete part).glb'),
+                gltfLoader.loadAsync('klug_composter_v1.glb'),
+                gltfLoader.loadAsync('klug_composter_v1.glb'),
             ]);
         
             envMap = texture;
@@ -293,6 +295,7 @@
             // controls.update();  // 컨트롤 업데이트
 
             targetPosition.set(x, y, z);
+
             if (!isAnimating) {
                 isAnimating = true;
                 requestAnimationFrame(animateCamera);
@@ -302,9 +305,17 @@
         function animateCamera() {
             const speed = 0.035;
             const distance = camera.position.distanceTo(targetPosition);
+
+            // const direction = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
+            
+            // // 대상 위치에서 고정된 거리만큼 떨어진 새로운 카메라 위치 설정
+            // const newPosition = targetPosition.clone().add(direction.multiplyScalar(8));
         
             camera.position.lerp(targetPosition, speed);
             camera.lookAt(objectCenter);
+
+            const direction = new THREE.Vector3();
+
             controls.update();
 
             if (distance > 0.5) {
