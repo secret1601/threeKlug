@@ -150,15 +150,15 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/threeklug/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                // gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
-                // gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
-                gltfLoader.loadAsync('klug_composter_v1.glb'),
-                gltfLoader.loadAsync('klug_composter_v1.glb'),
+                gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
+                gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
+                // gltfLoader.loadAsync('klug_composter_v1.glb'),
+                // gltfLoader.loadAsync('klug_composter_v1.glb'),
             ]);
         
             envMap = texture;
