@@ -4,20 +4,145 @@
 <head>
     <title>GLTF Loader</title>
     <style>
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; font-family: pretendard, sans-serif;}
         body { overflow: hidden; margin: 0; padding: 0; }
-        .container { position: relative; display: block; }
-        canvas { position: relative; }
+        ul, li { list-style: none; margin: 0; padding: 0; }
+        .container { position: relative; display: block;}
+        canvas { position: relative; display: block; }
         button { background: none; border: 0; cursor: pointer;}
-        .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: block; z-index: 1;}
-        .switch-scene__box { margin-bottom: 10px; }
-        .switch-scene__box button { border: 2px solid rgb(32, 76, 143); color: #fff; padding: 5px 10px; }
-        .animation__box { margin-bottom: 10px; }
-        .animation__box button{ border: 2px solid rgb(36, 177, 111); color: #fff; padding: 5px 10px; }
-        .colorchip__box { }
-        .colorchip__box button.select{ border: 2px solid #fff; }
-        #satinGray { background: #292929; border-radius: 50%; width: 25px; height: 25px; }
-        #warmGreige { background: #cbcbcc; border-radius: 50%; width: 25px; height: 25px; }
+        .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: flex; width: 100%; gap: 16px; justify-content: center; align-items: center; z-index: 1; }
+        .canvas__header { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); display: flex; width: 100%; justify-content: space-between; align-items: center; z-index: 1;  padding: 0 40px 0 56px;}
+        .between-bar { position: relative; }
+        .between-bar::before,
+        .between-bar::after { content: ""; position: absolute; display: block; width: 1px; height: 11px; top: 50%; transform: translateY(-50%); background-color: #505050; }
+        .between-bar::before { left: 0; }
+        .between-bar::after { right: 0; }
+
+        @keyframes expandAnimationWidth {
+            from {
+                max-width: 161px;
+            }
+            to {
+                max-width: 378px;
+            }
+        }
+        @keyframes reduceAnimationWidth {
+            from {
+                max-width: 378px;
+            }
+            to {
+                max-width: 161px;
+            }
+        }
+        @keyframes expandCameraWidth {
+            from {
+                max-width: 193px;
+            }
+            to {
+                max-width: 470px;
+            }
+        }
+        @keyframes reduceCameraWidth {
+            from {
+                max-width: 470px;
+            }
+            to {
+                max-width: 193px;
+            }
+        }
+
+        /* canvas header */
+        .header__left { position: relative; }
+        .header__left .logo__box { position: relative; display: flex; align-items: center; gap: 20px; }
+        .header__left .logo__box a { position: relative; max-width: 63px; width: 100%; }
+        .header__left .logo__box .viewer__text { color: #DFDFDF; font-size: 20px; font-weight: 500; padding-left: 20px;}
+        .header__left .logo__box .viewer__text.between-bar::before { height: 14px; }
+        .header__left .logo__box .viewer__text.between-bar::after { content: none; }
+
+        .header__center { position: absolute; left: 50%; transform: translateX(-50%); display: block; }
+        .header__center .product__name { position: relative; display: flex; align-items: center; }
+        .header__center .product__name .name__box { position: absolute; display: flex; opacity: 0; visibility: hidden; white-space: nowrap; align-items: center; gap: 10px; transition: opacity .4s; }
+        .header__center .product__name .name__box span { padding: 0; }
+        .header__center .product__name .name__box .kr { color: #DFDFDF; font-size: 20px; font-weight: 600;  }
+        .header__center .product__name .name__box .en { color: #777; font-size: 16px; font-weight: 500; }
+        .header__center .product__name.warm .name__box.warm-greige { position: relative; opacity: 1; visibility: visible; } 
+        .header__center .product__name.satin .name__box.satin-gray { position: relative; opacity: 1; visibility: visible; } 
+
+        .header__right { position: relative; }
+        .header__right .purchase__button { position: relative; display: block; color: #000; line-height: 1; font-size: 20px; font-weight: 500; padding: 18px 60px 18px 20px; background: #4cbcc3; border-radius: 30px; }
+        .header__right .purchase__button::after { content: ""; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: block; width: 35px; height: 35px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/Frame_1000006246.png?v=1725950194') no-repeat; background-size: cover; }
+
+        /* 컬러칩 Button */
+        .colorchip__box { position: relative; display: flex; gap: 40px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; padding: 14px 24px; }
+        .colorchip__box button { position: relative; display: block; padding: 0px  0px 0px 32px; line-height: 1; color: #fff; font-weight: 400; font-size: 18px; transition: color .4s; }
+        .colorchip__box button::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; border-radius: 50%; }
+        .colorchip__box button.select::before { border: 2px solid #EFEFEF; }
+        .colorchip__box button.select{ color: #4CBCC3; font-weight: 500; }
+        #warmGreige::before { background: #efedeb; }
+        #warmGreige::after { content: ""; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); display: block; width: 1px; height: 11px; background: #505050; }
+        #satinGray::before { background: #5A5959; }
+
+        /* 애니메이션 Button */
+        
+        .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; animation: reduceAnimationWidth .4s; overflow: hidden; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; }
+        .animation__box .detail__text::before,
+        .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
+        .animation__box .detail__text { position: relative; display: block; cursor: pointer; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .animation__box .animation__button { position: relative; display: block; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
+        .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; transition: color .4s;}
+        .animation__box .animation__button button.select { font-weight: 500; color: #4cbcc3; }
+        .animation__box .animation__button #animation1 { padding-left: 10px; }
+
+        .animation__box.active { animation: expandAnimationWidth .4s; max-width: 378px; }
+        .animation__box.active .detail__text {  visibility: hidden; padding: 0; max-width: 0; }
+        .animation__box.active .animation__button {  visibility: visible;  }
+        #animation3 { padding-right: 0; }
+
+        /* .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; transition: all .5s; }
+        .animation__box .detail__text::before,
+        .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
+        .animation__box .detail__text { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .animation__box .animation__button { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
+        .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; }
+        .animation__box .animation__button #animation1 { margin-left: 10px; }
+
+        .animation__box.active { max-width: 378px; }
+        .animation__box.active .detail__text {  visibility: hidden; max-width: 0px; padding: 0; }
+        .animation__box.active .animation__button {  visibility: visible;  max-width: 378px; }
+        #animation3 { padding-right: 0; } */
+        
+
+        /* 카메라 Button */
+        .camera__box { position: relative; display: flex; max-width: 196px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; animation: reduceCameraWidth .4s; overflow: hidden; }
+        .camera__box .change__angle { cursor: pointer; }
+        .camera__box .change__angle::before,
+        .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
+        .camera__box .change__angle { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .camera__box .camera__button { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap;  visibility: hidden; }
+        .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; transition: color .4s; }
+        .camera__box .camera__button button.select { font-weight: 500; color: #4cbcc3; }
+        
+        .camera__box.active { animation: expandCameraWidth .4s; max-width: 470px; }
+        .camera__box.active .change__angle {  visibility: hidden; max-width: 0px; padding: 0; }
+        .camera__box.active .camera__button {  visibility: visible; }
+        #front { padding-left: 15px; }
+        #right.between-bar { padding-right: 0; }
+        #right.between-bar::after { content: none; }
+
+        /* .camera__box { position: relative; display: flex; max-width: 196px; transition: all .5s; }
+        .camera__box .change__angle::before,
+        .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
+        .camera__box .change__angle { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .camera__box .camera__button { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap;  visibility: hidden; }
+        .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; }
+        
+        .camera__box.active { max-width: 354px; }
+        .camera__box.active .change__angle {  visibility: hidden; max-width: 0px; padding: 0; }
+        .camera__box.active .camera__button {  visibility: visible; }
+        #front { padding-left: 15px; }
+        #right.between-bar { padding-right: 0; }
+        #right.between-bar::after { content: none; } */
+
     </style>
 
     <script type="importmap">
@@ -34,27 +159,67 @@
 <body>
 
     <div class="container">
-        <div class="buttons__inner">
-            <div class="switch-scene__box">
-                <button id="front">Front</button>
-                <button id="back">Back</button>
-                <button id="left">Left</button>
-                <button id="right">Right</button>
-                <button id="top">Top</button>
-                <button id="bottom">Bottom</button>
+        
+        <div class="canvas__header">
+            <div class="header__left">
+                <div class="logo__box">
+                    <a href="/"><img src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/logo_4.png?v=1725947401" alt="클럭 로고 이미지, Klug Logo Image"></a>
+                    <div class="viewer__text between-bar">
+                        <span>치움 360° view</span>
+                    </div>
+                </div>
             </div>
-            <div class="animation__box">
-                <button id="animation1">Animation 1</button>
-                <button id="animation2">Animation 2</button>
-                <button id="animation3">Animation 3</button>
+            <div class="header__center">
+                <div class="product__name satin">
+                    <div class="name__box warm-greige">
+                        <span class="kr">윔그레이지</span>
+                        <span class="en">Warm Greige</span>
+                    </div>
+                    <div class="name__box satin-gray">
+                        <span class="kr">새틴그레이</span>
+                        <span class="en">Satin Gray</span>
+                    </div>
+                </div>
             </div>
-            <div class="colorchip__box">
-                <button id="satinGray" class="select"></button>
-                <button id="warmGreige"></button>
+            <div class="header__right">
+                <button class="purchase__button" onclick="location.href='/'">구매하기</button>
             </div>
         </div>
+
+        <div class="buttons__inner">
+            <div class="colorchip__box">
+                <button id="warmGreige">웜그레이지</button>
+                <button id="satinGray" class="select">새틴그레이</button>
+            </div>
+            <div class="animation__box">
+                <div class="detail__text">자세히 보기</div>
+                <div class="animation__button">
+                    <button id="animation1">삽 보관함</button>
+                    <button class="between-bar" id="animation2">상단 도어</button>
+                    <button id="animation3">손잡이</button>
+                </div>
+            </div>
+            <div class="camera__box">
+                <div class="change__angle">카메라 각도 변경</div>
+                <div class="camera__button">
+                    <button id="front">앞</button>
+                    <button class="between-bar" id="back">뒤</button>
+                    <button id="top">위</button>
+                    <button class="between-bar" id="bottom">아래</button>
+                    <button id="left">왼쪽</button>
+                    <button class="between-bar"id="right">오른쪽</button>
+                </div>
+            </div>
+        </div>
+
         <canvas id="MyCanvas"></canvas>
     </div>
+
+
+    <script>
+        
+
+    </script>
 
     <script type="module">
         import * as THREE from 'three';
@@ -64,15 +229,22 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import * as TWEEN from 'https://cdn.skypack.dev/@tweenjs/tween.js';
     
+        const headerProductName = document.querySelector(".header__center .product__name");
         const frontButton = document.querySelector('#front');
         const backButton = document.querySelector('#back');
         const leftButton = document.querySelector('#left');
         const rightButton = document.querySelector('#right');
         const topButton = document.querySelector('#top');
         const bottomButton = document.querySelector('#bottom');
+        const animationBox = document.querySelector(".animation__box");
+        const animationDetailText = document.querySelector(".animation__box .detail__text");
+        const animationButtons = document.querySelectorAll(".animation__box .animation__button button");
         const animation1 = document.querySelector('#animation1');
         const animation2 = document.querySelector('#animation2');
         const animation3 = document.querySelector('#animation3');
+        const cameraBox = document.querySelector(".camera__box");
+        const cameraButtons = document.querySelectorAll(".camera__box .camera__button button");
+        const colorChipButtonAll = document.querySelectorAll('.colorchip__box button');
         const satinGrayButton = document.querySelector('#satinGray');
         const warmGreigeButton = document.querySelector('#warmGreige');
 
@@ -104,6 +276,12 @@
         
             window.addEventListener('resize', onWindowResize);
             setupButtons();
+        }
+
+        // remove ALL select class
+        function toggleSelect(event, nodes) {
+            nodes.forEach(e => e.classList.remove("select"));
+            event.target.classList.add("select");
         }
         
         // 렌더러 설정
@@ -150,7 +328,7 @@
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader().setPath('/glb/');
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
@@ -259,33 +437,54 @@
         }
         
         function setupButtons() {
+            // 컬러칩
+            satinGrayButton.addEventListener("click", () => {
+                setMaterialAnimation(gltfSatinGray);
+                headerProductName.classList.remove("warm");
+                headerProductName.classList.add("satin");
+                toggleSelect(event, colorChipButtonAll);
+            });
+            warmGreigeButton.addEventListener("click", () => {
+                setMaterialAnimation(gltfWarmGerige);
+                headerProductName.classList.remove("satin");
+                headerProductName.classList.add("warm");
+                toggleSelect(event, colorChipButtonAll);
+            });
+
+            // 애니메이션
+            animation1.addEventListener('click', () => toggleAnimation([3]));
+            animation2.addEventListener('click', () => toggleAnimation([0,1,2]));
+            animation3.addEventListener('click', () => toggleAnimation([4]));
+
+            animationBox.addEventListener("click", () => {
+                cameraBox.classList.remove("active");
+                animationBox.classList.add("active");
+            });
+
+            animationButtons.forEach(button => {
+                button.addEventListener("click", () => {
+                    button.classList.toggle("select");
+                });
+            });
+
+            // 카메라 전환
             frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
             backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
             leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
             rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
             topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
             bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
-        
-            // frontButton.addEventListener('click', () => moveCamera(0, 0, 3));
-            // backButton.addEventListener('click', () => moveCamera(0, 0, -3));
-            // leftButton.addEventListener('click', () => moveCamera(-3, 0, 0));
-            // rightButton.addEventListener('click', () => moveCamera(3, 0, 0));
-            // topButton.addEventListener('click', () => moveCamera(0, 3, 0));
-            // bottomButton.addEventListener('click', () => moveCamera(0, -3, 0));
 
-            animation1.addEventListener('click', () => toggleAnimation([0,1,2]));
-            animation2.addEventListener('click', () => toggleAnimation([3]));
-            animation3.addEventListener('click', () => toggleAnimation([4]));
-            
-            satinGrayButton.addEventListener("click", () => setMaterialAnimation(gltfSatinGray));
-            warmGreigeButton.addEventListener("click", () =>setMaterialAnimation(gltfWarmGerige));
-        }
+            cameraBox.addEventListener("click", () => {
+                cameraBox.classList.add("active");
+                animationBox.classList.remove("active");
+            });
 
-        function moveCamera(x, y, z) {
-            new TWEEN.Tween(camera.position)
-                .to({ x: x, y: y, z: z }, 1000) // 1초 동안 애니메이션
-                .easing(TWEEN.Easing.Quadratic.InOut)
-                .start();
+            cameraButtons.forEach(button => {
+                button.addEventListener("click", () => {
+                    toggleSelect(event, cameraButtons);
+                });
+            });
         }
         
         function setCameraTarget(x, y, z) {
@@ -303,7 +502,7 @@
         }
         
         function animateCamera() {
-            const speed = 0.035;
+            const speed = 0.02;
             const distance = camera.position.distanceTo(targetPosition);
 
             // const direction = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
@@ -334,9 +533,6 @@
                 const action = actions[index];
                 const state = animationStates[index];
 
-                console.log("actione -> ", action);
-                console.log("state -> ", state);
-
                 if (!state.isPlaying) {
                     startAnimation(action, state);
                 } else {
@@ -348,7 +544,6 @@
 
                 mixer.addEventListener('finished', (e) => {
                     if (e.action === action) {
-                        console.log("Animation finished");
                         state.isPlaying = false;
                     }
                 });
@@ -382,7 +577,6 @@
                 if (remainingTime <= pauseThreshold) {
                     action.paused = true;
                     state.isPlaying = true;
-                    console.log("pause Animation");
                 } else {
                     requestAnimationFrame(checkTime);
                 }
