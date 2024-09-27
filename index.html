@@ -1,151 +1,156 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-    <title>GLTF Loader</title>
-    <style>
-        * { box-sizing: border-box; font-family: pretendard, sans-serif;}
-        body { overflow: hidden; margin: 0; padding: 0; }
-        ul, li { list-style: none; margin: 0; padding: 0; }
-        .container { position: relative; display: block;}
-        canvas { position: relative; display: block; }
-        button { background: none; border: 0; cursor: pointer;}
-        .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: flex; width: 100%; gap: 16px; justify-content: center; align-items: center; z-index: 1; }
-        .canvas__header { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); display: flex; width: 100%; justify-content: space-between; align-items: center; z-index: 1;  padding: 0 40px 0 56px;}
-        .between-bar { position: relative; }
-        .between-bar::before,
-        .between-bar::after { content: ""; position: absolute; display: block; width: 1px; height: 11px; top: 50%; transform: translateY(-50%); background-color: #505050; }
-        .between-bar::before { left: 0; }
-        .between-bar::after { right: 0; }
+<head></head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>GLTF Loader</title>
+<style>
+    * { box-sizing: border-box; font-family: pretendard, sans-serif; }
+    body { overflow: hidden;  margin: 0; padding: 0; background: #000; }
+    body .canvas__header .header__center { opacity: 0; visibility: hidden; transition: opacity .5s; }
+    body.v3d-loader .canvas__header .header__center { opacity: 1; visibility: visible; }
+    body .buttons__inner { opacity: 0; visibility: hidden; transition: opacity .5s; }
+    body.v3d-loader .buttons__inner { opacity: 1; visibility: visible; }
+    body #MyCanvas { opacity: 0; visibility: hidden; transition: opacity .5s; }
+    body.v3d-loader #MyCanvas { opacity: 1; visibility: visible; }
+    ul, li { list-style: none; margin: 0; padding: 0; }
+    .container { position: relative; display: block; }
+    canvas { position: relative; display: block; }
+    button { background: none; border: 0; cursor: pointer; }
+    .mo-only { display: none; }
+    .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: flex; width: 100%; gap: 16px; justify-content: center; align-items: center; z-index: 1; }
+    .canvas__header { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); display: flex; width: 100%; justify-content: space-between; align-items: center; z-index: 1; padding: 0 40px 0 56px; }
+    .between-bar { position: relative; }
+    .between-bar::before, .between-bar::after { content: ""; position: absolute; display: block; width: 1px; height: 11px; top: 50%; transform: translateY(-50%); background-color: #505050; }
+    .between-bar::before { left: 0; }
+    .between-bar::after { right: 0; }
 
-        @keyframes expandAnimationWidth {
-            from {
-                max-width: 161px;
-            }
-            to {
-                max-width: 378px;
-            }
-        }
-        @keyframes reduceAnimationWidth {
-            from {
-                max-width: 378px;
-            }
-            to {
-                max-width: 161px;
-            }
-        }
-        @keyframes expandCameraWidth {
-            from {
-                max-width: 193px;
-            }
-            to {
-                max-width: 470px;
-            }
-        }
-        @keyframes reduceCameraWidth {
-            from {
-                max-width: 470px;
-            }
-            to {
-                max-width: 193px;
-            }
+    @media (max-width: 768px) {
+        .mo-only { display: block; }
+    }
+
+    @keyframes expandAnimationWidth {
+        from {
+            max-width: 161px;
         }
 
-        /* canvas header */
-        .header__left { position: relative; }
-        .header__left .logo__box { position: relative; display: flex; align-items: center; gap: 20px; }
-        .header__left .logo__box a { position: relative; max-width: 63px; width: 100%; }
-        .header__left .logo__box .viewer__text { color: #DFDFDF; font-size: 20px; font-weight: 500; padding-left: 20px;}
-        .header__left .logo__box .viewer__text.between-bar::before { height: 14px; }
-        .header__left .logo__box .viewer__text.between-bar::after { content: none; }
+        to {
+            max-width: 378px;
+        }
+    }
 
-        .header__center { position: absolute; left: 50%; transform: translateX(-50%); display: block; }
-        .header__center .product__name { position: relative; display: flex; align-items: center; }
-        .header__center .product__name .name__box { position: absolute; display: flex; opacity: 0; visibility: hidden; white-space: nowrap; align-items: center; gap: 10px; transition: opacity .4s; }
-        .header__center .product__name .name__box span { padding: 0; }
-        .header__center .product__name .name__box .kr { color: #DFDFDF; font-size: 20px; font-weight: 600;  }
-        .header__center .product__name .name__box .en { color: #777; font-size: 16px; font-weight: 500; }
-        .header__center .product__name.warm .name__box.warm-greige { position: relative; opacity: 1; visibility: visible; } 
-        .header__center .product__name.satin .name__box.satin-gray { position: relative; opacity: 1; visibility: visible; } 
+    @keyframes reduceAnimationWidth {
+        from {
+            max-width: 378px;
+        }
 
-        .header__right { position: relative; }
-        .header__right .purchase__button { position: relative; display: block; color: #000; line-height: 1; font-size: 20px; font-weight: 500; padding: 18px 60px 18px 20px; background: #4cbcc3; border-radius: 30px; }
-        .header__right .purchase__button::after { content: ""; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: block; width: 35px; height: 35px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/Frame_1000006246.png?v=1725950194') no-repeat; background-size: cover; }
+        to {
+            max-width: 161px;
+        }
+    }
 
-        /* 컬러칩 Button */
-        .colorchip__box { position: relative; display: flex; gap: 40px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; padding: 14px 24px; }
-        .colorchip__box button { position: relative; display: block; padding: 0px  0px 0px 32px; line-height: 1; color: #fff; font-weight: 400; font-size: 18px; transition: color .4s; }
-        .colorchip__box button::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; border-radius: 50%; }
-        .colorchip__box button.select::before { border: 2px solid #EFEFEF; }
-        .colorchip__box button.select{ color: #4CBCC3; font-weight: 500; }
-        #warmGreige::before { background: #efedeb; }
-        #warmGreige::after { content: ""; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); display: block; width: 1px; height: 11px; background: #505050; }
-        #satinGray::before { background: #5A5959; }
+    @keyframes expandCameraWidth {
+        from {
+            max-width: 193px;
+        }
 
-        /* 애니메이션 Button */
-        
-        .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; animation: reduceAnimationWidth .4s; overflow: hidden; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; }
-        .animation__box .detail__text::before,
-        .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
-        .animation__box .detail__text { position: relative; display: block; cursor: pointer; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
-        .animation__box .animation__button { position: relative; display: block; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
-        .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; transition: color .4s;}
-        .animation__box .animation__button button.select { font-weight: 500; color: #4cbcc3; }
-        .animation__box .animation__button #animation1 { padding-left: 10px; }
+        to {
+            max-width: 470px;
+        }
+    }
 
-        .animation__box.active { animation: expandAnimationWidth .4s; max-width: 378px; }
-        .animation__box.active .detail__text {  visibility: hidden; padding: 0; max-width: 0; }
-        .animation__box.active .animation__button {  visibility: visible;  }
-        #animation3 { padding-right: 0; }
+    @keyframes reduceCameraWidth {
+        from {
+            max-width: 470px;
+        }
 
-        /* .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; transition: all .5s; }
-        .animation__box .detail__text::before,
-        .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
-        .animation__box .detail__text { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
-        .animation__box .animation__button { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
-        .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; }
-        .animation__box .animation__button #animation1 { margin-left: 10px; }
+        to {
+            max-width: 193px;
+        }
+    }
 
-        .animation__box.active { max-width: 378px; }
-        .animation__box.active .detail__text {  visibility: hidden; max-width: 0px; padding: 0; }
-        .animation__box.active .animation__button {  visibility: visible;  max-width: 378px; }
-        #animation3 { padding-right: 0; } */
-        
+    /* canvas header */
+    .header__left { position: relative; }
+    .header__left .logo__box { position: relative; display: flex; align-items: center; gap: 20px; }
+    .header__left .logo__box a { position: relative; max-width: 63px; width: 100%; }
+    .header__left .logo__box .viewer__text { color: #DFDFDF; font-size: 20px; font-weight: 500; padding-left: 20px; }
+    .header__left .logo__box .viewer__text.between-bar::before { height: 14px; }
+    .header__left .logo__box .viewer__text.between-bar::after { content: none; }
+    .header__center { position: absolute; left: 50%; transform: translateX(-50%); display: block; }
+    .header__center .product__name { position: relative; display: flex; align-items: center; }
+    .header__center .product__name .name__box { position: absolute; display: flex; opacity: 0; visibility: hidden; white-space: nowrap; align-items: center; gap: 10px; transition: opacity .4s; }
+    .header__center .product__name .name__box span { padding: 0; }
+    .header__center .product__name .name__box .kr { color: #DFDFDF; font-size: 20px; font-weight: 600; }
 
-        /* 카메라 Button */
-        .camera__box { position: relative; display: flex; max-width: 196px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; animation: reduceCameraWidth .4s; overflow: hidden; }
-        .camera__box .change__angle { cursor: pointer; }
-        .camera__box .change__angle::before,
-        .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
-        .camera__box .change__angle { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
-        .camera__box .camera__button { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap;  visibility: hidden; }
-        .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; transition: color .4s; }
-        .camera__box .camera__button button.select { font-weight: 500; color: #4cbcc3; }
-        
-        .camera__box.active { animation: expandCameraWidth .4s; max-width: 470px; }
-        .camera__box.active .change__angle {  visibility: hidden; max-width: 0px; padding: 0; }
-        .camera__box.active .camera__button {  visibility: visible; }
-        #front { padding-left: 15px; }
-        #right.between-bar { padding-right: 0; }
-        #right.between-bar::after { content: none; }
+    .header__center .product__name .name__box .en { color: #777; font-size: 16px; font-weight: 500; }
+    .header__center .product__name.warm .name__box.warm-greige { position: relative; opacity: 1; visibility: visible; }
+    .header__center .product__name.satin .name__box.satin-gray { position: relative; opacity: 1; visibility: visible; }
+    .header__right { position: relative; }
+    .header__right .purchase__button { position: relative; display: block; color: #000; line-height: 1; font-size: 20px; font-weight: 500; padding: 18px 60px 18px 20px; background: #fdfdfd; border-radius: 30px; }
+    .header__right .purchase__button::after { content: ""; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: block; width: 35px; height: 36px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/Frame_1000006246_1.png?v=1727165583') no-repeat; background-size: cover; transition: all .3s; }
+    .header__right .purchase__button:hover::after { background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/Frame_1000006246_2.png?v=1727165583') no-repeat; }
 
-        /* .camera__box { position: relative; display: flex; max-width: 196px; transition: all .5s; }
-        .camera__box .change__angle::before,
-        .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
-        .camera__box .change__angle { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
-        .camera__box .camera__button { position: relative; display: block; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap;  visibility: hidden; }
-        .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; }
-        
-        .camera__box.active { max-width: 354px; }
-        .camera__box.active .change__angle {  visibility: hidden; max-width: 0px; padding: 0; }
-        .camera__box.active .camera__button {  visibility: visible; }
-        #front { padding-left: 15px; }
-        #right.between-bar { padding-right: 0; }
-        #right.between-bar::after { content: none; } */
+    /* 컬러칩 Button */
+    .colorchip__box { position: relative; display: flex; gap: 40px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; padding: 14px 24px; }
+    .colorchip__box button { position: relative; display: block; padding: 0px 0px 0px 32px; line-height: 1; color: #fff; font-weight: 400; font-size: 18px; transition: color .4s; }
+    .colorchip__box button::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; }
+    .colorchip__box button.select::before { border: 2px solid #EFEFEF; box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.40) inset; }
+    .colorchip__box button.select { color: #4CBCC3; font-weight: 500; }
+    #warmGreige::before { background: #efedeb; }
+    #warmGreige::after { content: ""; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); display: block; width: 1px; height: 11px; background: #505050; }
+    #satinGray::before { background: #5A5959; }
 
-    </style>
+    /* 애니메이션 Button */
+    .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; animation: reduceAnimationWidth .4s; overflow: hidden; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; }
+    .animation__box .detail__text::before,
+    .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
+    .animation__box .detail__text { position: relative; display: block; cursor: pointer; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+    .animation__box .animation__button { position: relative; display: block; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
+    .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; transition: color .4s; }
+    .animation__box .animation__button button.select { font-weight: 500; color: #4cbcc3;}
+    .animation__box .animation__button #animation1 {padding-left: 10px;}
+    .animation__box.active { animation: expandAnimationWidth .4s; max-width: 378px; }
+    .animation__box.active .detail__text { visibility: hidden; padding: 0; max-width: 0; }
+    .animation__box.active .animation__button { visibility: visible; }
 
-    <script type="importmap">
+    #animation3 { padding-right: 0; }
+
+    /* 카메라 Button */
+    .camera__box { position: relative; display: flex; max-width: 196px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; animation: reduceCameraWidth .4s; overflow: hidden; }
+    .camera__box .change__angle { cursor: pointer; }
+    .camera__box .change__angle::before,
+    .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
+    .camera__box .change__angle { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+    .camera__box .camera__button { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
+    .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; transition: color .4s;}
+    .camera__box .camera__button button.select { font-weight: 500; color: #4cbcc3; }
+    .camera__box.active { animation: expandCameraWidth .4s; max-width: 470px; }
+    .camera__box.active .change__angle { visibility: hidden; max-width: 0px; padding: 0; }
+    .camera__box.active .camera__button { visibility: visible; }
+
+    #front { padding-left: 15px; }
+    #right.between-bar { padding-right: 0; }
+    #right.between-bar::after { content: none; }
+
+    @keyframes fadeInOut {
+        0% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .v3d-loading__inner { position: fixed; left: 50%; top: 50%; display: block; width: 72px; height: 72px; border-radius: 50%; transform: translate(-50%, -50%); }
+    .v3d-loading__inner .v3d-loading { position: absolute; display: block; width: 72px; height: 72px; border-radius: 50%; background: #292929; animation: fadeInOut 2s 120ms ease-out infinite; }
+    .v3d-loading__inner img { position: absolute; display: block; width: 70px; height: 70px; }
+    .v3d-loader .v3d-loading__inner { opacity: 0; visibility: hidden; }
+</style>
+
+<script type="importmap">
         {
             "imports": {
             "three": "https://unpkg.com/three/build/three.module.js",
@@ -159,11 +164,18 @@
 <body>
 
     <div class="container">
+
+        <div class="v3d-loading__inner">
+            <div class="v3d-loading"></div>
+            <img src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_360_2x_pc.png?v=1727409072" alt="360 viewer icon">
+        </div>
         
         <div class="canvas__header">
             <div class="header__left">
                 <div class="logo__box">
-                    <a href="/"><img src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/logo_4.png?v=1725947401" alt="클럭 로고 이미지, Klug Logo Image"></a>
+                    <a href="/"><img
+                            src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/logo_4.png?v=1725947401"
+                            alt="클럭 로고 이미지, Klug Logo Image"></a>
                     <div class="viewer__text between-bar">
                         <span>치움 360° view</span>
                     </div>
@@ -207,7 +219,7 @@
                     <button id="top">위</button>
                     <button class="between-bar" id="bottom">아래</button>
                     <button id="left">왼쪽</button>
-                    <button class="between-bar"id="right">오른쪽</button>
+                    <button class="between-bar" id="right">오른쪽</button>
                 </div>
             </div>
         </div>
@@ -215,11 +227,9 @@
         <canvas id="MyCanvas"></canvas>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
 
-    <script>
-        
-
-    </script>
+    
 
     <script type="module">
         import * as THREE from 'three';
@@ -227,8 +237,10 @@
         import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { FlakesTexture } from 'three/addons/textures/FlakesTexture.js';
         import * as TWEEN from 'https://cdn.skypack.dev/@tweenjs/tween.js';
-    
+
+        const bodyEl = document.querySelector("body");
         const headerProductName = document.querySelector(".header__center .product__name");
         const frontButton = document.querySelector('#front');
         const backButton = document.querySelector('#back');
@@ -248,9 +260,16 @@
         const satinGrayButton = document.querySelector('#satinGray');
         const warmGreigeButton = document.querySelector('#warmGreige');
 
-        const pearl_light_arr = ["lid_part1","lid_part2","lid_part3","pearl_light_parent","개체_32","개체_33"];
-        const pearl_dark_arr = ["drawer","pearl_dark_parent","개체_3","개체_11","개체_14","개체_15","개체_16","개체_17","개체_18","개체_20","개체_22001","개체_45","개체_46","개체_58","handle_inside"];
-        const pearl_glossy_arr = ["handle_outside"];
+        // const pearl_light_arr = ["lid_part1","lid_part2","lid_part3","pearl_light_parent","개체_32","개체_33","개체_18"];
+        // const pearl_dark_arr = ["drawer","pearl_dark_parent","개체_3","개체_11","개체_14","개체_15","개체_16","개체_17","개체_20","개체_22001","개체_45","개체_46","개체_58","handle_inside"];
+        // const pearl_glossy_arr = ["handle_outside"];
+
+        const pearl_inlside_light = ["inside_light"]
+        const pearl_light_arr = ["light", "light_lid3", "pearl_light_parent", "light_lid1"];
+        const pearl_dark_arr = ["inside_dark_lid1", "dark", "dark_2", "dark_drawer", "inside_dark", "inside_dark_lid3", "inside_dark_lid2", "dark_handle"];
+        const pearl_glossy_arr = ["glossy"];
+        const inside_mixser_arr = ["mixer"];
+        const led_off_arr = ["led_off"];
 
         const fixedDistance = 5;
 
@@ -262,18 +281,22 @@
         let animationInProgress = false;
         let actions = [];
         let animationStates = []; // Track animation states (playing or paused)
-        
+
+        let targetQuaternion = new THREE.Quaternion();
+        let isRotating = false;
+
         init().catch(err => console.error(err));
-        
+
         async function init() {
             setupRenderer();
             setupScene();
             setupCamera();
             setupControls();
 
-            await loadModel();
+            // await loadModel();
+            await executeLoaderUX();
             setMaterialAnimation(gltfSatinGray);
-        
+
             window.addEventListener('resize', onWindowResize);
             setupButtons();
         }
@@ -283,7 +306,7 @@
             nodes.forEach(e => e.classList.remove("select"));
             event.target.classList.add("select");
         }
-        
+
         // 렌더러 설정
         function setupRenderer() {
             renderer = new THREE.WebGLRenderer({ canvas: MyCanvas, antialias: true });
@@ -291,28 +314,27 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            // 매핑 노출 수준 설정
             renderer.toneMappingExposure = 1;
             renderer.outputEncoding = THREE.sRGBEncoding;
         }
-        
+
         // 3D scene 설정
         function setupScene() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x000000);
         }
-        
+
         function setupCamera() {
             camera = new THREE.PerspectiveCamera(20, window.innerWidth / window.innerHeight, 0.05, 20);
-            camera.position.set(2, 2, 2.5);
+            camera.position.set(1.6, 2, 2.4);
             camera.enablePan = false;
-            camera.lookAt(0, 1, 0);
+            camera.lookAt(0, 0, 0);
         }
-        
+
         function setupControls() {
             controls = new OrbitControls(camera, renderer.domElement);
             controls.minDistance = 1.5;
-            controls.maxDistance = 10;
+            controls.maxDistance = 3.5;
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.enablePan = false;
@@ -322,81 +344,164 @@
             controls.update();
         }
 
-        async function loadModel(){
+        async function loadModel() {
             const rgbeLoader = new RGBELoader();
             const dracoLoader = new DRACOLoader();
 
             dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
 
-            const gltfLoader = new GLTFLoader().setPath('/threeKlug/glb/');
+            const gltfLoader = new GLTFLoader();
             gltfLoader.setDRACOLoader(dracoLoader);
 
             [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
                 rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(level6_comp).glb'),
-                gltfLoader.loadAsync('klug_disposer_v10_0807(lv6_comp_light).glb'),
-                // gltfLoader.loadAsync('klug_composter_v1.glb'),
-                // gltfLoader.loadAsync('klug_composter_v1.glb'),
-            ]);
-        
+                gltfLoader.loadAsync('https://cdn.shopify.com/3d/models/0cb293dc6ce3a594/klug_composter_final_satin_v8_.glb'),
+                gltfLoader.loadAsync('https://cdn.shopify.com/3d/models/778b5353963d7517/klug_composter_final_warm_v8_.glb'),
+            ])
+
             envMap = texture;
             envMap.mapping = THREE.EquirectangularReflectionMapping;
             scene.environment = envMap;
         }
+
+        async function executeLoaderUX() {
+            await loadModel();
+            bodyEl.classList.add("v3d-loader");
+        }
+
         function setMaterial(glbObject) {
 
-            const material_light = new THREE.MeshStandardMaterial({
-                color: 0xcccccc,
-                metalness: 1.0,
-                roughness: 0.342,
-                envMap: envMap,
-            });
+            if (glbObject === gltfSatinGray) {
+                const satin_material_light = new THREE.MeshStandardMaterial({
+                    color: 0x5b5a5a,
+                    metalness: .5,
+                    roughness: 0,
+                    envMap: envMap,
+                });
 
-            const material_dark = new THREE.MeshStandardMaterial({
-                color: 0x666666,
-                metalness: 1.0,
-                roughness: 0.342,
-                envMap: envMap,
-            });
+                const satin_material_dark = new THREE.MeshStandardMaterial({
+                    color: 0x414141,
+                    metalness: .5,
+                    roughness: 0.2,
+                    envMap: envMap,
+                });
 
-            const material_glossy = new THREE.MeshStandardMaterial({
-                color: 0x666666,
-                metalness: 1.0,
-                roughness: 0.1,
-                envMap: envMap,
-            });
+                const satin_material_glossy = new THREE.MeshStandardMaterial({
+                    color: 0x414141,
+                    metalness: .5,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
 
-            glbObject.scene.traverse((child) => {
-                if(child.isMesh) {
-                    pearl_light_arr.forEach(childName => {
-                        if(child.name === `${childName}`){
-                            // console.log(child.name);
-                            child.material = material_light;
-                        }
-                    });
-                    pearl_dark_arr.forEach(childName => {
-                        if(child.name === `${childName}`){
-                            // console.log(child.name);
-                            child.material = material_dark;
-                        }
-                    });
-                    pearl_glossy_arr.forEach(childName => {
-                        if(child.name === `${childName}`){
-                            // console.log(child.name);
-                            child.material = material_glossy;
-                        }
-                    });
-                }
-            });
+                const satin_material_led = new THREE.MeshStandardMaterial({
+                    color: 0x333333,
+                    metalness: .5,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                glbObject.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        pearl_light_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                console.log(child.name);
+                                child.material = satin_material_light;
+                            }
+                        });
+                        pearl_dark_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_dark;
+                            }
+                        });
+                        pearl_glossy_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_glossy;
+                            }
+                        });
+                        led_off_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_led;
+                            }
+                        });
+                    }
+                });
+            } else if(glbObject === gltfWarmGerige) {
+                const warm_material_light = new THREE.MeshStandardMaterial({
+                    color: 0xdbdbd7,
+                    metalness: .005,
+                    roughness: 0,
+                    envMap: envMap,
+                });
+                const warm_material_dark = new THREE.MeshStandardMaterial({
+                    color: 0xbfbfbc,
+                    metalness: .005,
+                    roughness: 0,
+                    envMap: envMap,
+                });
+
+                const warm_material_glossy = new THREE.MeshStandardMaterial({
+                    color: 0xbfbfbc,
+                    metalness: .005,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                const warn_inside_mixser = new THREE.MeshStandardMaterial({
+                    color: 0x444444,
+                    metalness: .005,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                const warn_material_led = new THREE.MeshStandardMaterial({
+                    color: 0xbababa,
+                    metalness: .005,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+
+                glbObject.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        pearl_light_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_light;
+                            }
+                        });
+                        pearl_dark_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_dark;
+                            }
+                        })
+                        pearl_glossy_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_glossy;
+                            }
+                        });
+                        inside_mixser_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warn_inside_mixser;
+                            }
+                        });
+                        led_off_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warn_material_led;
+                            }
+                        });
+                    }
+                });
+            }
         }
-        
+
         // 텍스처 환경 세팅, 모델 애니메이션 세팅 
         function setMaterialAnimation(glbObject) {
-            if(currentGlb) {
-                if(currentGlb.scene == glbObject.scene) return;
+
+            if (currentGlb) {
+                if (currentGlb.scene == glbObject.scene) return;
             }
             currentGlb = glbObject;
-            if(glbObject === gltfSatinGray) setMaterial(glbObject);
+            setMaterial(glbObject);
+            // if (glbObject === gltfSatinGray) setMaterial(glbObject);
 
             if (mixer) mixer.stopAllAction();
             actions = [];
@@ -405,55 +510,60 @@
             console.log("gltfModel --> ", gltfModel);
             scene.clear();
             scene.add(gltfModel);
-        
+
             objectCenter = new THREE.Vector3();
             const box = new THREE.Box3().setFromObject(gltfModel);
             box.getCenter(objectCenter);
-        
+
             controls.target.copy(objectCenter);
 
-        
+
             mixer = new THREE.AnimationMixer(gltfModel);
             glbObject.animations.forEach((clip, index) => {
                 const action = mixer.clipAction(clip);
                 actions.push(action);
-                animationStates[index] = { isPlaying: false, time: 0 }; // Initialize animation states
+                animationStates[index] = { isPlaying: false, time: 0 };
             });
+
+
         }
-        
+
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             render();
         }
-        
+
         function render() {
             controls.update();
 
-            TWEEN.update();
             if (mixer) mixer.update(0.01);
             renderer.render(scene, camera);
         }
-        
+
         function setupButtons() {
             // 컬러칩
             satinGrayButton.addEventListener("click", () => {
-                setMaterialAnimation(gltfSatinGray);
-                headerProductName.classList.remove("warm");
-                headerProductName.classList.add("satin");
-                toggleSelect(event, colorChipButtonAll);
+                if (!satinGrayButton.classList.contains("select")) {
+                    setMaterialAnimation(gltfSatinGray);
+                    headerProductName.classList.replace("warm", "satin");
+                    toggleSelect(event, colorChipButtonAll);
+                    toggleSelect(event, animationButtons);
+                }
             });
             warmGreigeButton.addEventListener("click", () => {
-                setMaterialAnimation(gltfWarmGerige);
-                headerProductName.classList.remove("satin");
-                headerProductName.classList.add("warm");
-                toggleSelect(event, colorChipButtonAll);
+                if (!warmGreigeButton.classList.contains("select")) {
+                    setMaterialAnimation(gltfWarmGerige);
+                    headerProductName.classList.replace("satin", "warm");
+                    toggleSelect(event, colorChipButtonAll);
+                    toggleSelect(event, animationButtons);
+                }
             });
 
             // 애니메이션
-            animation1.addEventListener('click', () => toggleAnimation([3]));
-            animation2.addEventListener('click', () => toggleAnimation([0,1,2]));
+            animation1.addEventListener('click', () => toggleAnimation([0]));
+            animation2.addEventListener('click', () => toggleAnimation([1, 2, 3]));
             animation3.addEventListener('click', () => toggleAnimation([4]));
 
             animationBox.addEventListener("click", () => {
@@ -467,13 +577,35 @@
                 });
             });
 
+            // 3D 객체 회전 및 카메라 설정
+            const updateCameraForVerticalButtons = () => {
+                setCameraTarget(0, objectCenter.y, objectCenter.z + 4);
+                // if (bottomButton.classList.contains("select") || topButton.classList.contains("select")) {
+                //     setCameraTarget(0, objectCenter.y, objectCenter.z + 4);
+                // }
+            };
+
+
             // 카메라 전환
-            frontButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z + 5));
-            backButton.addEventListener('click', () => setCameraTarget(0, objectCenter.y, objectCenter.z - 5));
-            leftButton.addEventListener('click', () => setCameraTarget(objectCenter.x - 5, objectCenter.y, 0));
-            rightButton.addEventListener('click', () => setCameraTarget(objectCenter.x + 5, objectCenter.y, 0));
-            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 5, 0));
-            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 5, 0));
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 4, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 4, 0));
+
+            frontButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: 0, z: 0 });
+            });
+            backButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: Math.PI, z: 0 });
+            });
+            leftButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: Math.PI / 2, z: 0 });
+            });
+            rightButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: -Math.PI / 2, z: 0 });
+            });
 
             cameraBox.addEventListener("click", () => {
                 cameraBox.classList.add("active");
@@ -486,9 +618,38 @@
                 });
             });
         }
-        
-        function setCameraTarget(x, y, z) {
 
+        function rotateObject(targetRotation) {
+            const currentRotation = {
+                x: currentGlb.scene.rotation.x,
+                y: currentGlb.scene.rotation.y,
+                z: currentGlb.scene.rotation.z
+            };
+
+            const rotationSpeed = 0.05; // Adjust for smoothness
+
+            function animate() {
+                // Smoothly interpolate between current and target rotations
+                currentRotation.x += (targetRotation.x - currentRotation.x) * rotationSpeed;
+                currentRotation.y += (targetRotation.y - currentRotation.y) * rotationSpeed;
+                currentRotation.z += (targetRotation.z - currentRotation.z) * rotationSpeed;
+
+                // Apply the updated rotations to the scene object
+                currentGlb.scene.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
+
+                // Continue animation if the rotation is not close to the target
+                if (Math.abs(targetRotation.x - currentRotation.x) > 0.001 ||
+                    Math.abs(targetRotation.y - currentRotation.y) > 0.001 ||
+                    Math.abs(targetRotation.z - currentRotation.z) > 0.001) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            // Start the animation
+            requestAnimationFrame(animate);
+        }
+
+        function setCameraTarget(x, y, z) {
             // camera.position.set(x, y, z); // 카메라의 위치를 바로 설정
             // camera.lookAt(objectCenter);  // 카메라가 objectCenter를 바라보도록 설정
             // controls.update();  // 컨트롤 업데이트
@@ -500,24 +661,17 @@
                 requestAnimationFrame(animateCamera);
             }
         }
-        
+
         function animateCamera() {
-            const speed = 0.02;
+            const speed = 0.035;
             const distance = camera.position.distanceTo(targetPosition);
 
-            // const direction = new THREE.Vector3().subVectors(camera.position, targetPosition).normalize();
-            
-            // // 대상 위치에서 고정된 거리만큼 떨어진 새로운 카메라 위치 설정
-            // const newPosition = targetPosition.clone().add(direction.multiplyScalar(8));
-        
             camera.position.lerp(targetPosition, speed);
             camera.lookAt(objectCenter);
 
-            const direction = new THREE.Vector3();
-
             controls.update();
 
-            if (distance > 0.5) {
+            if (distance > 0.6) {
                 controls.enabled = false;
                 requestAnimationFrame(animateCamera);
             } else {
@@ -554,14 +708,14 @@
             action.reset();
             action.play();
             action.paused = false;
-            action.timeScale = 2; // Forward playback direction
+            action.timeScale = 3;
             state.isPlaying = true;
             state.time = action.time;
         }
 
         function togglePlaybackDirection(action) {
             action.paused = false;
-            action.timeScale = action.timeScale === 2 ? -2 : 2;
+            action.timeScale = action.timeScale === 3 ? -3 : 3;
         }
 
         function ensureLoopOnce(action) {
@@ -569,7 +723,7 @@
         }
 
         function monitorAnimation(action, state) {
-            const pauseThreshold = 0.1; 
+            const pauseThreshold = 0.1;
 
             function checkTime() {
                 if (!state.isPlaying) return;
@@ -586,12 +740,10 @@
         }
 
         controls.addEventListener("change", () => {
-            // console.log(`Camera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
         });
     </script>
-    
-    
+
+
 </body>
 
 </html>
-

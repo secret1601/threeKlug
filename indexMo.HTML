@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <title>GLTF Loader</title>
+    <style>
+        * { box-sizing: border-box; font-family: pretendard, sans-serif;}
+        body { overflow: hidden; margin: 0; padding: 0; background: #000; }
+        
+        body #MyCanvas { opacity: 0; visibility: hidden; transition: opacity .5s; }
+        body.v3d-loader #MyCanvas { opacity: 1; visibility: visible; }
+        body .buttons__inner { opacity: 0; visibility: hidden; transition: opacity .5s; }
+        body.v3d-loader .buttons__inner { opacity: 1; visibility: visible; }
+        body .product-name__inner { opacity: 0; visibility: hidden; transition: opacity .5s; }
+        body.v3d-loader .product-name__inner { opacity: 1; visibility: visible; }
+
+        body #ch-plugin { display: none !important; }
+        ul, li { list-style: none; margin: 0; padding: 0; }
+        #header, .top_ban_wrap { display: none !important; }
+        #container, #contents { width: 100% !important; }
+        #container { min-height:unset !important; margin: unset !impotant; }
+        body #contents { margin-top: 1px !important; background:#000; }
+        .container { position: relative; display: block; max-width: 100% !important; }
+
+        ul, li { list-style: none; margin: 0; padding: 0; }
+        .container { position: relative; display: block;}
+        canvas { position: relative; display: block; }
+        button { background: none; border: 0; cursor: pointer;}
+        .mo-only { display: none; }
+        .pc-only { display: block; }
+        .buttons__inner { position: absolute; left: 50%; bottom: 100px; transform: translateX(-50%); display: flex; gap: 16px; justify-content: center; align-items: center; z-index: 1; }
+        .canvas__header { position: absolute; left: 50%; top: 32px; transform: translateX(-50%); display: flex; width: 100%; justify-content: space-between; align-items: center; z-index: 1;  padding: 0 40px 0 56px;}
+        .between-bar { position: relative; }
+        .between-bar::before,
+        .between-bar::after { content: ""; position: absolute; display: block; width: 1px; height: 11px; top: 50%; transform: translateY(-50%); background-color: #505050; }
+        .between-bar::before { left: 0; }
+        .between-bar::after { right: 0; }
+
+
+        @keyframes expandColorchipWidth {
+            from {
+                max-width: 75px;
+            }
+            to {
+                max-width: 104px;
+            }
+        }
+        @keyframes reduceColorchipWidth {
+            from {
+                max-width: 104px;
+            }
+            to {
+                max-width: 75px;
+            }
+        }
+        @keyframes expandAnimationWidth {
+            from {
+                max-width: 161px;
+            }
+            to {
+                max-width: 378px;
+            }
+        }
+        @keyframes reduceAnimationWidth {
+            from {
+                max-width: 378px;
+            }
+            to {
+                max-width: 161px;
+            }
+        }
+        @keyframes expandCameraWidth {
+            from {
+                max-width: 193px;
+            }
+            to {
+                max-width: 470px;
+            }
+        }
+        @keyframes reduceCameraWidth {
+            from {
+                max-width: 470px;
+            }
+            to {
+                max-width: 193px;
+            }
+        }
+
+        /* canvas header */
+        .header__left { position: relative; }
+        .header__left .logo__box { position: relative; display: flex; align-items: center; gap: 20px; }
+        .header__left .logo__box a { position: relative; max-width: 63px; width: 100%; }
+        .header__left .logo__box .viewer__text { color: #DFDFDF; font-size: 20px; font-weight: 500; padding-left: 20px;}
+        .header__left .logo__box .viewer__text.between-bar::before { height: 14px; }
+        .header__left .logo__box .viewer__text.between-bar::after { content: none; }
+
+        .product-name__inner { position: absolute; bottom: 166px; left: 50%; transform: translateX(-50%); display: block; z-index: 1; }
+        .product-name__inner .product__name { position: relative; display: flex; align-items: center; }
+        .product-name__inner .product__name .name__box { position: absolute; display: flex; flex-direction: column; opacity: 0; visibility: hidden; white-space: nowrap; align-items: center; gap: 3px; transition: opacity .4s; }
+        .product-name__inner .product__name .name__box span { padding: 0; }
+        .product-name__inner .product__name .name__box .kr { color: #DFDFDF; font-size: 17px; font-weight: 600;  }
+        .product-name__inner .product__name .name__box .en { color: #777; font-size: 13px; font-weight: 500; }
+        .product-name__inner .product__name.warm .name__box.warm-greige { position: relative; opacity: 1; visibility: visible; } 
+        .product-name__inner .product__name.satin .name__box.satin-gray { position: relative; opacity: 1; visibility: visible; } 
+
+        .header__right { position: relative; }
+        .header__right .purchase__button { position: relative; display: block; color: #000; line-height: 1; font-size: 20px; font-weight: 500; padding: 18px 60px 18px 20px; background: #4cbcc3; border-radius: 30px; }
+        .header__right .purchase__button::after { content: ""; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: block; width: 35px; height: 35px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/Frame_1000006246.png?v=1725950194') no-repeat; background-size: cover; }
+
+        /* 컬러칩 Button */
+        .colorchip__box { position: relative; display: flex; gap: 40px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; color: #fff; padding: 14px 24px; }
+        .colorchip__box button { position: relative; display: block; padding: 0px  0px 0px 32px; line-height: 1; color: #fff; font-weight: 400; font-size: 18px; transition: color .4s; }
+        /* .colorchip__box button::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); display: block; width: 24px; height: 24px; border-radius: 50%; box-sizing: border-box; }
+        .colorchip__box button.select::before { border: 2px solid #EFEFEF; box-shadow: 0px 0px 3px rgba(0, 0, 0, 0.40) inset; } */
+        .colorchip__box button.select{ color: #4CBCC3; font-weight: 500; }
+        #warmGreige::before { background: #efedeb; }
+        #warmGreige::after { content: ""; position: absolute; right: -20px; top: 50%; transform: translateY(-50%); display: block; width: 1px; height: 11px; background: #505050; }
+        #satinGray::before { background: #5A5959; }
+
+        /* 애니메이션 Button */
+        .animation__box { position: relative; display: flex; align-items: center; max-width: 161px; animation: reduceAnimationWidth .4s; overflow: hidden; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; }
+        .animation__box .detail__text::before,
+        .animation__box .animation__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_detail.png?v=1725873712') no-repeat; background-size: cover; }
+        .animation__box .detail__text { position: relative; display: block; cursor: pointer; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .animation__box .animation__button { position: relative; display: block; border-radius: 25px; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; visibility: hidden; }
+        .animation__box .animation__button button { color: #fff; font-size: 18px; padding: 0 20px; line-height: 1; transition: color .4s;}
+        .animation__box .animation__button button.select { font-weight: 500; color: #4cbcc3; }
+        .animation__box .animation__button #animation1 { padding-left: 10px; }
+
+        .animation__box.active { animation: expandAnimationWidth .4s; max-width: 378px; }
+        .animation__box.active .detail__text {  visibility: hidden; padding: 0; max-width: 0; }
+        .animation__box.active .animation__button {  visibility: visible;  }
+        #animation3 { padding-right: 0; }
+
+        /* 카메라 Button */
+        .camera__box { position: relative; display: flex; max-width: 196px; background: #2c2c2c; border: 1px solid #414141; border-radius: 25px; animation: reduceCameraWidth .4s; overflow: hidden; }
+        .camera__box .change__angle { cursor: pointer; }
+        .camera__box .change__angle::before,
+        .camera__box .camera__button::before { content: ""; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); display: block; width:24px; height:24px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_angle.svg?v=1725932558') no-repeat; background-size: cover; }
+        .camera__box .change__angle { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap; }
+        .camera__box .camera__button { position: relative; display: block; color: #fff; font-size: 18px; padding: 14px 24px 14px 52px; line-height: 1; white-space: nowrap;  visibility: hidden; }
+        .camera__box .camera__button button { font-size: 18px; color: #fff; font-weight: 400; line-height: 1; padding: 0 20px; transition: color .4s; }
+        .camera__box .camera__button button.select { font-weight: 500; color: #4cbcc3; }
+
+        .camera__box.active { animation: expandCameraWidth .4s; max-width: 470px; }
+        .camera__box.active .change__angle {  visibility: hidden; max-width: 0px; padding: 0; }
+        .camera__box.active .camera__button {  visibility: visible; }
+        #front { padding-left: 15px; }
+        #right.between-bar { padding-right: 0; }
+        #right.between-bar::after { content: none; }
+
+        @media (max-width: 768px) {
+            @keyframes expandAnimationWidth {
+                from {
+                    max-width: 75px;
+                }
+                to {
+                    max-width: 272px;
+                }
+            }
+            @keyframes reduceAnimationWidth {
+                from {
+                    max-width: 272px;
+                }
+                to {
+                    max-width: 75px;
+                }
+            }
+            @keyframes expandCameraWidth {
+                from {
+                    max-width: 114px;
+                }
+                to {
+                    max-width: 352px;
+                }
+            }
+            @keyframes reduceCameraWidth {
+                from {
+                    max-width: 352px;
+                }
+                to {
+                    max-width: 114px;
+                }
+            }
+
+            .mo-only { display: block; }
+            .pc-only { display: none; }
+            .canvas__header { top: 20px; padding: 0 20px; }
+            .header__left .logo__box a { max-width: 50px; }
+            .header__left .logo__box a img { width: 100%; }
+
+            .header__right .purchase__button { font-size: 13px; background: #fcfcfe; padding: 10px 15px; border-radius: 4px; }
+            .header__right .purchase__button::after { content: none; }
+
+            .buttons__inner { gap: 0; bottom: 75px; width:100%; }
+
+
+            .colorchip__text,
+            .colorchip__button,
+            .animation__box .detail__text,
+            .animation__box .animation__button,
+            .camera__box .change__angle,
+            .camera__box .camera__button { padding: 9.5px 14px 9.5px 32px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+
+
+            .animation__box .animation__button button,
+            .camera__box .camera__button button { font-size: 14px; }
+
+            .animation__box .animation__button button { padding: 0 16px; }
+
+            .colorchip__text { position: relative; }
+            .colorchip__text::before { content: ""; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); display: block; width: 20px; height: 20px; background: url('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/invert_colors.png?v=1726195627') no-repeat; background-size: cover; }
+            .colorchip__box { max-width: 75px; padding: 0; align-items: center; gap: 0; animation: reduceColorchipWidth .4s; margin-left: 20px; }
+            .colorchip__box .colorchip__button { display: flex; visibility: hidden; opacity: 0; transition: opacity .4s; }
+            .colorchip__box button { padding: 0; }
+            .colorchip__box.active { max-width: 104px; animation: expandColorchipWidth .4s;  }
+            .colorchip__box.active .colorchip__text { visibility: hidden; padding: 0; max-width: 0; }
+            .colorchip__box.active .colorchip__button { visibility: visible; opacity: 1; padding-left: 16px; padding: 8px 14px 8px 16px; }
+            .colorchip__box #warmGreige { position: relative; display: block; width: 20px; height: 20px; border-radius: 50%; background: #efedeb; margin-right: 17px; }
+            .colorchip__box #satinGray { position: relative; display: block; width: 20px; height: 20px; border-radius: 50%; background: #5a5959; margin-left: 16px; }
+            .colorchip__box .colorchip__button button.select { border: 1px solid #fff; box-shadow: 0px 0px 3px rgba(0, 0, 0, .70) inset; }
+            .colorchip__box #warmGreige::after { right: -16px; }
+            .buttons__relative { position: relative; max-width: 100%; display: flex;gap: 10px; overflow-x: scroll; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; padding-right: 20px; }
+            .buttons__relative::-webkit-scrollbar { display: none; }
+            .colorchip__box .colorchip__button { overflow: hidden; visibility: hidden; }
+            .colorchip__box.active .colorchip__button { overflow: visible; visibility: visible; }
+
+            .animation__box { max-width: 75px; overflow: visible; }
+            .animation__box.active { max-width: 272px; }
+            .animation__box .animation__button { overflow: hidden; visibility: hidden; padding-right: 18px; }
+            .animation__box.active .animation__button { overflow: visible; visibility: visible; }
+
+            .camera__box { max-width: 114px; align-items: center; overflow: visible; }
+            .camera__box.active { max-width: 352px; }
+            .camera__box .camera__button button { padding: 0 15px; }
+            .camera__box .camera__button { overflow: hidden; visibility: hidden; padding: 0; }
+            .camera__box.active .camera__button { overflow: visible; visibility: visible; padding:9.5px 14px 9.5px 32px; }
+
+
+            .animation__box .detail__text::before, .animation__box .animation__button::before,
+            .camera__box .change__angle::before, .camera__box .camera__button::before { width: 20px; height: 20px; left: 10px; }
+
+            @keyframes fadeInOut {
+                0% {
+                    opacity: 1;
+                }
+                50% {
+                    opacity: 0.5;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+
+            .v3d-loading__inner { position: fixed; left: 50%; top: 50%; display: block; width: 56px; height: 56px; border-radius: 50%; transform: translate(-50%, -50%); }
+            .v3d-loading__inner .v3d-loading { position: absolute; display: block; width: 56px; height: 56px; border-radius: 50%; background: #292929; animation: fadeInOut 2s 120ms ease-out infinite; }
+            .v3d-loading__inner img { position: absolute; display: block; width: 55px; height: 55px; }
+            .v3d-loader .v3d-loading__inner { opacity: 0; visibility: hidden; }
+        }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+            "three": "https://unpkg.com/three/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three/examples/jsm/"
+            }
+        }
+    </script>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="v3d-loading__inner">
+            <div class="v3d-loading"></div>
+            <img src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/icn_360_2x_pc.png?v=1727409072" alt="360 viewer icon">
+        </div>
+        
+        <div class="canvas__header">
+            <div class="header__left">
+                <div class="logo__box">
+                    <a href="/"><img src="https://cdn.shopify.com/s/files/1/0738/7584/9516/files/logo_4.png?v=1725947401" alt="클럭 로고 이미지, Klug Logo Image"></a>
+                    <div class="viewer__text between-bar pc-only">
+                        <span>치움 360° view</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header__right">
+                <button class="purchase__button" onclick="location.href='/'">구매하기</button>
+            </div>
+        </div>
+
+        
+        <div class="product-name__inner">
+            <div class="product__name satin">
+                <div class="name__box warm-greige">
+                    <span class="kr">윔그레이지</span>
+                    <span class="en">Warm Greige</span>
+                </div>
+                <div class="name__box satin-gray">
+                    <span class="kr">새틴그레이</span>
+                    <span class="en">Satin Gray</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons__inner">
+            <div class="buttons__relative">
+                <div class="colorchip__box">
+                    <div class="colorchip__text">색상</div>
+                    <div class="colorchip__button">
+                        <button id="warmGreige"></button>
+                        <button id="satinGray" class="select"></button>
+                    </div>
+                </div>
+                <div class="animation__box">
+                    <div class="detail__text">기능</div>
+                    <div class="animation__button">
+                        <button id="animation1">삽 보관함</button>
+                        <button class="between-bar" id="animation2">상단 도어</button>
+                        <button id="animation3">손잡이</button>
+                    </div>
+                </div>
+                <div class="camera__box">
+                    <div class="change__angle">카메라 각도</div>
+                    <div class="camera__button">
+                        <button id="front">앞</button>
+                        <button class="between-bar" id="back">뒤</button>
+                        <button id="top">위</button>
+                        <button class="between-bar" id="bottom">아래</button>
+                        <button id="left">왼쪽</button>
+                        <button class="between-bar"id="right">오른쪽</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <canvas id="MyCanvas"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import * as TWEEN from 'https://cdn.skypack.dev/@tweenjs/tween.js';
+    
+        const bodyEl = document.querySelector("body");
+        const headerProductName = document.querySelector(".product-name__inner .product__name");
+        const frontButton = document.querySelector('#front');
+        const backButton = document.querySelector('#back');
+        const leftButton = document.querySelector('#left');
+        const rightButton = document.querySelector('#right');
+        const topButton = document.querySelector('#top');
+        const bottomButton = document.querySelector('#bottom');
+        const animationBox = document.querySelector(".animation__box");
+        const animationDetailText = document.querySelector(".animation__box .detail__text");
+        const animationButtons = document.querySelectorAll(".animation__box .animation__button button");
+        const animation1 = document.querySelector('#animation1');
+        const animation2 = document.querySelector('#animation2');
+        const animation3 = document.querySelector('#animation3');
+        const cameraBox = document.querySelector(".camera__box");
+        const cameraButtons = document.querySelectorAll(".camera__box .camera__button button");
+        const colorChipButtonAll = document.querySelectorAll('.colorchip__box button');
+        const colorChipBox = document.querySelector(".colorchip__box");
+        const satinGrayButton = document.querySelector('#satinGray');
+        const warmGreigeButton = document.querySelector('#warmGreige');
+
+        // const pearl_light_arr = ["inside_light","light","light_lid3","pearl_light_parent","light_lid1"];
+        // const pearl_dark_arr = ["inside_dark_lid1","dark","dark_2","dark_drawer","inside_dark","inside_dark_lid3","inside_dark_lid2","dark_handle"];
+        // const pearl_glossy_arr = ["glossy"];
+
+        const pearl_inlside_light = ["inside_light"]
+        const pearl_light_arr = ["light", "light_lid3", "pearl_light_parent", "light_lid1"];
+        const pearl_dark_arr = ["inside_dark_lid1", "dark", "dark_2", "dark_drawer", "inside_dark", "inside_dark_lid3", "inside_dark_lid2", "dark_handle"];
+        const pearl_glossy_arr = ["glossy"];
+        const inside_mixser_arr = ["mixer"];
+        const led_off_arr = ["led_off"];
+
+        const fixedDistance = 5;
+
+        let renderer, scene, camera, controls, objectCenter, mixer;
+        let texture, gltfSatinGray, gltfWarmGerige, envMap; // hdr, glb, envm gltfModel
+        let currentGlb; // 현재 glb 파일 
+        let targetPosition = new THREE.Vector3();
+        let isAnimating = false;
+        let animationInProgress = false;
+        let actions = [];
+        let animationStates = []; // Track animation states (playing or paused)
+
+        
+        init().catch(err => console.error(err));
+        
+        async function init() {
+            setupRenderer();
+            setupScene();
+            setupCamera();
+            setupControls();
+
+            await executeLoaderUX();
+            setMaterialAnimation(gltfSatinGray);
+        
+            window.addEventListener('resize', onWindowResize);
+            setupButtons();
+        }
+
+        // remove ALL select class
+        function toggleSelect(event, nodes) {
+            nodes.forEach(e => e.classList.remove("select"));
+            event.target.classList.add("select");
+        }
+        
+        // 렌더러 설정
+        function setupRenderer() {
+            renderer = new THREE.WebGLRenderer({ canvas: MyCanvas, antialias: true });
+            renderer.setAnimationLoop(render);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            // 매핑 노출 수준 설정
+            renderer.toneMappingExposure = 1;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+        }
+        
+        // 3D scene 설정
+        function setupScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+        }
+        
+        function setupCamera() {
+            camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.05, 20); // MO 카메라 거리
+            camera.position.set(2, 2, 2.5);
+            camera.enablePan = false;
+            camera.lookAt(0, 1, 0);
+        }
+        
+        function setupControls() {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.minDistance = 2;
+            controls.maxDistance = 3.5;
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false;
+            // controls.enableZoom = false;
+            controls.screenSpacePanning = false
+            controls.target.set(0, 0.2, 0);
+            controls.update();
+        }
+
+        async function loadModel(){
+            const rgbeLoader = new RGBELoader();
+            const dracoLoader = new DRACOLoader();
+
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.3/')
+
+            const gltfLoader = new GLTFLoader();
+            gltfLoader.setDRACOLoader(dracoLoader);
+
+            [texture, gltfSatinGray, gltfWarmGerige] = await Promise.all([
+                rgbeLoader.loadAsync('https://cdn.shopify.com/s/files/1/0738/7584/9516/files/env-map-camera-highlight-fold6.hdr?v=1722497474'),
+                gltfLoader.loadAsync('https://cdn.shopify.com/3d/models/0cb293dc6ce3a594/klug_composter_final_satin_v8_.glb'),
+                gltfLoader.loadAsync('https://cdn.shopify.com/3d/models/778b5353963d7517/klug_composter_final_warm_v8_.glb'),
+            ]);
+        
+            envMap = texture;
+            envMap.mapping = THREE.EquirectangularReflectionMapping;
+            scene.environment = envMap;
+        }
+
+        async function executeLoaderUX() {
+            await loadModel();
+            bodyEl.classList.add("v3d-loader");
+        }
+
+        function setMaterial(glbObject) {
+
+            if (glbObject === gltfSatinGray) {
+                const satin_material_light = new THREE.MeshStandardMaterial({
+                    color: 0x5b5a5a,
+                    metalness: .5,
+                    roughness: 0,
+                    envMap: envMap,
+                });
+
+                const satin_material_dark = new THREE.MeshStandardMaterial({
+                    color: 0x414141,
+                    metalness: .5,
+                    roughness: 0.2,
+                    envMap: envMap,
+                });
+
+                const satin_material_glossy = new THREE.MeshStandardMaterial({
+                    color: 0x414141,
+                    metalness: .5,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                const satin_material_led = new THREE.MeshStandardMaterial({
+                    color: 0x333333,
+                    metalness: .5,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                glbObject.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        pearl_light_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                console.log(child.name);
+                                child.material = satin_material_light;
+                            }
+                        });
+                        pearl_dark_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_dark;
+                            }
+                        });
+                        pearl_glossy_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_glossy;
+                            }
+                        });
+                        led_off_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = satin_material_led;
+                            }
+                        });
+                    }
+                });
+            } else if(glbObject === gltfWarmGerige) {
+                const warm_material_light = new THREE.MeshStandardMaterial({
+                    color: 0xdbdbd7,
+                    metalness: .005,
+                    roughness: 0,
+                    envMap: envMap,
+                });
+                const warm_material_dark = new THREE.MeshStandardMaterial({
+                    color: 0xbfbfbc,
+                    metalness: .005,
+                    roughness: 0,
+                    envMap: envMap,
+                });
+
+                const warm_material_glossy = new THREE.MeshStandardMaterial({
+                    color: 0xbfbfbc,
+                    metalness: .005,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                const warn_inside_mixser = new THREE.MeshStandardMaterial({
+                    color: 0x444444,
+                    metalness: .005,
+                    roughness: 0.1,
+                    envMap: envMap,
+                });
+
+                const warn_material_led = new THREE.MeshStandardMaterial({
+                        color: 0xbababa,
+                        metalness: .005,
+                        roughness: 0.1,
+                        envMap: envMap,
+                    });
+
+                glbObject.scene.traverse((child) => {
+                    if (child.isMesh) {
+                        pearl_light_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_light;
+                            }
+                        });
+                        pearl_dark_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_dark;
+                            }
+                        })
+                        pearl_glossy_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warm_material_glossy;
+                            }
+                        });
+                        inside_mixser_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warn_inside_mixser;
+                            }
+                        });
+                        led_off_arr.forEach(childName => {
+                            if (child.name === `${childName}`) {
+                                child.material = warn_material_led;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        
+        // 텍스처 환경 세팅, 모델 애니메이션 세팅 
+        function setMaterialAnimation(glbObject) {
+            if(currentGlb) {
+                if(currentGlb.scene == glbObject.scene) return;
+            }
+            currentGlb = glbObject;
+            setMaterial(glbObject);
+
+            if (mixer) mixer.stopAllAction();
+            actions = [];
+
+            const gltfModel = glbObject.scene;
+            console.log("gltfModel --> ", gltfModel);
+            scene.clear();
+            scene.add(gltfModel);
+        
+            objectCenter = new THREE.Vector3();
+            const box = new THREE.Box3().setFromObject(gltfModel);
+            box.getCenter(objectCenter);
+        
+            controls.target.copy(objectCenter);
+
+        
+            mixer = new THREE.AnimationMixer(gltfModel);
+            glbObject.animations.forEach((clip, index) => {
+                const action = mixer.clipAction(clip);
+                actions.push(action);
+                animationStates[index] = { isPlaying: false, time: 0 };
+            });
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            render();
+        }
+        
+        function render() {
+            TWEEN.update();
+            controls.update();
+
+            if (mixer) mixer.update(0.01);
+            renderer.render(scene, camera);
+        }
+        
+        function setupButtons() {
+            // 컬러칩
+            satinGrayButton.addEventListener("click", () => {
+                if(!satinGrayButton.classList.contains("select")) {
+                    setMaterialAnimation(gltfSatinGray);
+                    headerProductName.classList.replace("warm", "satin");
+                    toggleSelect(event, colorChipButtonAll);
+                    toggleSelect(event, animationButtons);
+                }
+            });
+            warmGreigeButton.addEventListener("click", () => {
+                if(!warmGreigeButton.classList.contains("select")) {
+                    setMaterialAnimation(gltfWarmGerige);
+                    headerProductName.classList.replace("satin", "warm");
+                    toggleSelect(event, colorChipButtonAll);
+                    toggleSelect(event, animationButtons);
+                }
+            });
+
+            colorChipBox.addEventListener("click", () => {
+                cameraBox.classList.remove("active");
+                animationBox.classList.remove("active");
+                colorChipBox.classList.add("active");
+            });
+
+            // 애니메이션
+            animation1.addEventListener('click', () => toggleAnimation([0]));
+            animation2.addEventListener('click', () => toggleAnimation([1,2,3]));
+            animation3.addEventListener('click', () => toggleAnimation([4]));
+
+            animationBox.addEventListener("click", () => {
+                cameraBox.classList.remove("active");
+                colorChipBox.classList.remove("active");
+                animationBox.classList.add("active");
+            });
+
+            animationButtons.forEach(button => {
+                button.addEventListener("click", () => {
+                    button.classList.toggle("select");
+                });
+            });
+
+            const updateCameraForVerticalButtons = () => {
+                setCameraTarget(0, objectCenter.y, objectCenter.z + 4);
+            };
+
+            // 카메라 전환
+            topButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y + 4, 0));
+            bottomButton.addEventListener('click', () => setCameraTarget(objectCenter.x, objectCenter.y - 4, 0));
+
+            frontButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: 0, z: 0 });
+            });
+            backButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: Math.PI, z: 0 });
+            });
+            leftButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: Math.PI / 2, z: 0 });
+            });
+            rightButton.addEventListener('click', () => {
+                updateCameraForVerticalButtons();
+                rotateObject({ x: 0, y: -Math.PI / 2, z: 0 });
+            });
+
+            cameraBox.addEventListener("click", () => {
+                animationBox.classList.remove("active");
+                colorChipBox.classList.remove("active");
+                cameraBox.classList.add("active");
+            });
+
+            cameraButtons.forEach(button => {
+                button.addEventListener("click", () => {
+                    toggleSelect(event, cameraButtons);
+                });
+            });
+        }
+
+        function rotateObject(targetRotation) {
+            const currentRotation = {
+                x: currentGlb.scene.rotation.x,
+                y: currentGlb.scene.rotation.y,
+                z: currentGlb.scene.rotation.z
+            };
+
+            const rotationSpeed = 0.05; 
+
+            function animate() {
+                currentRotation.x += (targetRotation.x - currentRotation.x) * rotationSpeed;
+                currentRotation.y += (targetRotation.y - currentRotation.y) * rotationSpeed;
+                currentRotation.z += (targetRotation.z - currentRotation.z) * rotationSpeed;
+
+                currentGlb.scene.rotation.set(currentRotation.x, currentRotation.y, currentRotation.z);
+
+                if (Math.abs(targetRotation.x - currentRotation.x) > 0.002 ||
+                    Math.abs(targetRotation.y - currentRotation.y) > 0.002 ||
+                    Math.abs(targetRotation.z - currentRotation.z) > 0.002) {
+                    requestAnimationFrame(animate);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function setCameraTarget(x, y, z) {
+            targetPosition.set(x, y, z);
+
+            if (!isAnimating) {
+                isAnimating = true;
+                requestAnimationFrame(animateCamera);
+            }
+        }   
+        
+        function animateCamera() {
+            const speed = 0.035;
+            const distance = camera.position.distanceTo(targetPosition);
+        
+            camera.position.lerp(targetPosition, speed);
+            camera.lookAt(objectCenter);
+
+            const direction = new THREE.Vector3();
+
+            controls.update();
+
+            if (distance > 0.6) {
+                controls.enabled = false;
+                requestAnimationFrame(animateCamera);
+            } else {
+                controls.enabled = true;
+                isAnimating = false;
+            }
+        }
+
+        function toggleAnimation(indices) {
+            indices.forEach(index => {
+                if (!mixer || !actions[index]) return;
+
+                const action = actions[index];
+                const state = animationStates[index];
+
+                if (!state.isPlaying) {
+                    startAnimation(action, state);
+                } else {
+                    togglePlaybackDirection(action);
+                }
+
+                ensureLoopOnce(action);
+                monitorAnimation(action, state);
+
+                mixer.addEventListener('finished', (e) => {
+                    if (e.action === action) {
+                        state.isPlaying = false;
+                    }
+                });
+            });
+        }
+
+        function startAnimation(action, state) {
+            action.reset();
+            action.play();
+            action.paused = false;
+            action.timeScale = 3; // Forward playback direction
+            state.isPlaying = true;
+            state.time = action.time;
+        }
+
+        function togglePlaybackDirection(action) {
+            action.paused = false;
+            action.timeScale = action.timeScale === 3 ? -3 : 3;
+        }
+
+        function ensureLoopOnce(action) {
+            action.setLoop(THREE.LoopOnce);
+        }
+
+        function monitorAnimation(action, state) {
+            const pauseThreshold = 0.1; 
+
+            function checkTime() {
+                if (!state.isPlaying) return;
+                const remainingTime = action.getClip().duration - action.time;
+                if (remainingTime <= pauseThreshold) {
+                    action.paused = true;
+                    state.isPlaying = true;
+                } else {
+                    requestAnimationFrame(checkTime);
+                }
+            }
+
+            requestAnimationFrame(checkTime);
+        }
+
+        controls.addEventListener("change", () => {
+            // console.log(`Camera Position: x=${camera.position.x}, y=${camera.position.y}, z=${camera.position.z}`);
+        });
+    </script>
+    
+    
+</body>
+
+</html>
+
